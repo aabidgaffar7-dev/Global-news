@@ -22,6 +22,42 @@ export async function getStoryById(id: string): Promise<Story | undefined> {
   return stories.find((s) => s.id === id);
 }
 
+// Web (GNews) results carry their data packed into the id, so the article page
+// can summarize them without a server-side store. See encodeWebId in lib/gnews.ts.
+export function decodeWebStory(id: string): Story | undefined {
+  if (!id.startsWith("web_")) return undefined;
+  try {
+    const p = JSON.parse(
+      Buffer.from(id.slice(4), "base64url").toString("utf8"),
+    );
+    if (!p.u || !p.t) return undefined;
+    return {
+      id,
+      title: p.t,
+      link: p.u,
+      source: p.s ?? "Web",
+      sourceId: "gnews",
+      lean: "intl",
+      category: p.c ?? "world",
+      summary: p.d,
+      imageUrl: p.i,
+      publishedAt: p.p ?? new Date().toISOString(),
+      lat: 0,
+      lng: 0,
+      city: "",
+      country: "",
+      score: 0,
+    } as Story;
+  } catch {
+    return undefined;
+  }
+}
+
+// Resolve an article id to a story — RSS (cached set) or a web result (encoded id).
+export async function resolveStory(id: string): Promise<Story | undefined> {
+  return (await getStoryById(id)) ?? decodeWebStory(id);
+}
+
 const SummarySchema = z.object({
   summary: z
     .string()

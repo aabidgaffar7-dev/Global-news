@@ -1,6 +1,7 @@
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import { getAllStories } from "@/lib/news";
+import { searchWeb, gnewsEnabled } from "@/lib/gnews";
 import { LEAN_META } from "@/lib/feeds";
 import { timeAgo } from "@/lib/format";
 
@@ -13,16 +14,24 @@ export default async function SearchPage({
 }) {
   const { q } = await searchParams;
   const query = (q ?? "").trim();
-  const all = await getAllStories();
-
   const needle = query.toLowerCase();
-  const results = query
+
+  const [all, web] = await Promise.all([
+    getAllStories(),
+    query ? searchWeb(query) : Promise.resolve([]),
+  ]);
+
+  const rss = query
     ? all.filter((s) =>
         [s.title, s.summary, s.source, s.city, s.country, s.category]
           .filter(Boolean)
           .some((field) => field!.toLowerCase().includes(needle)),
       )
     : [];
+
+  // Merge your curated feeds with the wider web, de-duplicated by link.
+  const seen = new Set(rss.map((s) => s.link));
+  const results = [...rss, ...web.filter((w) => !seen.has(w.link))];
 
   return (
     <div className="min-h-screen bg-[#03040a] text-slate-200">
@@ -59,6 +68,11 @@ export default async function SearchPage({
             "Search the hub"
           )}
         </h1>
+        {query && gnewsEnabled && (
+          <p className="mt-1 text-xs text-slate-500">
+            Searching your curated feeds + the wider web 🌐
+          </p>
+        )}
 
         <ul className="mt-4 space-y-3">
           {results.map((story) => {
@@ -81,13 +95,22 @@ export default async function SearchPage({
                     <span className="font-medium text-slate-400">
                       {story.source}
                     </span>
-                    <span
-                      className="rounded-full px-1.5 py-0.5"
-                      style={{ color: lean.color, background: `${lean.color}1a` }}
-                    >
-                      {lean.label}
-                    </span>
-                    <span>· 📍 {story.city}</span>
+                    {story.sourceId === "gnews" ? (
+                      <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-slate-300">
+                        🌐 web
+                      </span>
+                    ) : (
+                      <span
+                        className="rounded-full px-1.5 py-0.5"
+                        style={{
+                          color: lean.color,
+                          background: `${lean.color}1a`,
+                        }}
+                      >
+                        {lean.label}
+                      </span>
+                    )}
+                    {story.city && <span>· 📍 {story.city}</span>}
                     <span>· {timeAgo(story.publishedAt)}</span>
                     <span className="ml-auto text-sky-400">Read More →</span>
                   </div>

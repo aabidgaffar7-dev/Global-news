@@ -1,7 +1,7 @@
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import ReadSourceButton from "@/components/ReadSourceButton";
-import { getStoryById, summarizeStory } from "@/lib/article";
+import { resolveStory, summarizeStory } from "@/lib/article";
 import { recordEngagement } from "@/lib/engagement";
 import { getUser, getServerSupabase } from "@/lib/supabase-server";
 import { LEAN_META } from "@/lib/feeds";
@@ -18,7 +18,7 @@ export default async function ArticlePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const story = await getStoryById(id);
+  const story = await resolveStory(id);
 
   if (!story) {
     return (
@@ -93,7 +93,8 @@ export default async function ArticlePage({
             {lean.label}
           </span>
           <span className="text-slate-500">
-            · 📍 {story.city}, {story.country} · {timeAgo(story.publishedAt)}
+            {story.city ? `· 📍 ${story.city}, ${story.country} · ` : "· "}
+            {timeAgo(story.publishedAt)}
           </span>
         </div>
 
