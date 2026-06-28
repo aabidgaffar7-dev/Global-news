@@ -67,7 +67,7 @@ export default async function ArticlePage({
   const cat = CATEGORY_META[story.category];
 
   return (
-    <div className="min-h-screen bg-[#03040a] text-slate-200">
+    <div className="min-h-screen text-slate-200">
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-5 pb-24 pt-8">
         <Link
@@ -98,7 +98,7 @@ export default async function ArticlePage({
           </span>
         </div>
 
-        <h1 className="mt-3 text-3xl font-bold leading-tight text-white sm:text-4xl">
+        <h1 className="font-display mt-3 text-3xl font-medium leading-tight text-white sm:text-4xl">
           {story.title}
         </h1>
 

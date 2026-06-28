@@ -90,7 +90,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-full bg-sky-500 py-3 font-semibold text-white transition hover:bg-sky-400 disabled:opacity-60"
+        className="aurora-bg w-full rounded-full py-3 font-semibold text-[#07060f] transition hover:brightness-110 disabled:opacity-60"
       >
         {loading
           ? "…"

@@ -112,7 +112,7 @@ export default function FollowManager({
           />
           <button
             type="submit"
-            className="rounded-full bg-sky-500 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-400"
+            className="aurora-bg rounded-full px-4 py-2 text-sm font-semibold text-[#07060f] transition hover:brightness-110"
           >
             Add
           </button>
@@ -164,7 +164,7 @@ function Chip({
       onClick={onClick}
       className={`rounded-full border px-3 py-1.5 text-sm transition ${
         active
-          ? "border-sky-400/60 bg-sky-500/20 text-sky-100"
+          ? "border-cyan-400/60 bg-cyan-500/20 text-cyan-100"
           : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
       }`}
     >

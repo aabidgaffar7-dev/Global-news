@@ -34,7 +34,7 @@ export default async function SearchPage({
   const results = [...rss, ...web.filter((w) => !seen.has(w.link))];
 
   return (
-    <div className="min-h-screen bg-[#03040a] text-slate-200">
+    <div className="min-h-screen text-slate-200">
       <SiteHeader />
       <main className="mx-auto max-w-4xl px-5 pb-24 pt-8">
         <Link
@@ -58,7 +58,7 @@ export default async function SearchPage({
           />
         </form>
 
-        <h1 className="mt-8 text-xl font-semibold text-white">
+        <h1 className="font-display mt-8 text-2xl font-medium text-white">
           {query ? (
             <>
               {results.length} result{results.length === 1 ? "" : "s"} for “

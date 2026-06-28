@@ -12,7 +12,7 @@ export default async function LoginPage() {
   if (user) redirect("/account");
 
   return (
-    <div className="min-h-screen bg-[#03040a] text-slate-200">
+    <div className="min-h-screen text-slate-200">
       <SiteHeader />
       <main className="mx-auto max-w-md px-5 py-16">
         <Link
@@ -23,8 +23,9 @@ export default async function LoginPage() {
         </Link>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.02] p-8">
-          <h1 className="text-2xl font-bold text-white">
-            <span aria-hidden>✨ </span>Welcome to Global News Hub
+          <h1 className="font-display text-2xl font-medium text-white">
+            <span aria-hidden>✨ </span>Welcome to{" "}
+            <span className="aurora-text italic">Global News Hub</span>
           </h1>
           <p className="mt-1 text-sm text-slate-400">
             Sign in to follow regions &amp; topics, get personalized For You

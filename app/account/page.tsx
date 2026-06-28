@@ -14,7 +14,11 @@ export default async function AccountPage() {
   const sb = await getServerSupabase();
   const [{ data: profile }, { data: history }, { data: follows }] =
     await Promise.all([
-      sb.from("profiles").select("display_name,bio,created_at").eq("id", user.id).maybeSingle(),
+      sb
+        .from("profiles")
+        .select("display_name,bio,created_at")
+        .eq("id", user.id)
+        .maybeSingle(),
       sb.from("reading_history").select("source,category").eq("user_id", user.id),
       sb.from("follows").select("kind").eq("user_id", user.id),
     ]);
@@ -23,54 +27,65 @@ export default async function AccountPage() {
   const sources = new Set((history ?? []).map((h) => h.source)).size;
   const categories = new Set((history ?? []).map((h) => h.category)).size;
   const following = follows?.length ?? 0;
-
+  const name = profile?.display_name ?? "Reader";
   const joined = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString()
+    ? new Date(profile.created_at).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+      })
     : "—";
 
   const stats = [
-    { label: "Articles Read", value: articlesRead, icon: "👁" },
-    { label: "Sources", value: sources, icon: "🏢" },
+    { label: "Articles read", value: articlesRead, icon: "👁" },
+    { label: "Sources", value: sources, icon: "🏛️" },
     { label: "Categories", value: categories, icon: "🗂️" },
-    { label: "Following", value: following, icon: "❤" },
+    { label: "Following", value: following, icon: "♥" },
   ];
 
   return (
-    <div className="min-h-screen bg-[#03040a] text-slate-200">
+    <div className="min-h-screen text-slate-200">
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-5 pb-24 pt-8">
         <div className="flex items-center justify-between">
           <Link
             href="/"
-            className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white"
+            className="inline-flex items-center gap-1 text-sm text-slate-400 transition hover:text-white"
           >
             ← Back to Home
           </Link>
           <SignOutButton />
         </div>
 
-        <h1 className="mt-5 text-3xl font-bold text-white">
-          <span aria-hidden>👤 </span>Account &amp; Settings
+        <h1 className="font-display mt-6 text-3xl font-medium text-[#ece8e1] sm:text-4xl">
+          Account <span className="aurora-text italic">&amp; Settings</span>
         </h1>
 
-        {/* Profile card */}
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6">
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-2xl font-bold text-white">
-              {(profile?.display_name ?? user.email ?? "?")
-                .charAt(0)
-                .toUpperCase()}
+        {/* Profile */}
+        <div className="glass mt-6 rounded-3xl p-6">
+          <div className="flex items-start gap-4">
+            <div
+              className="flex h-16 w-16 items-center justify-center rounded-full text-2xl font-medium text-white"
+              style={{
+                background: "linear-gradient(135deg,#22d3ee,#8b5cf6,#ec4899)",
+              }}
+            >
+              {name.charAt(0).toUpperCase()}
             </div>
-            <div>
-              <h2 className="text-xl font-semibold text-white">
-                {profile?.display_name ?? "Reader"}
-              </h2>
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-display text-xl font-medium text-white">
+                  {name}
+                </h2>
+                <span className="inline-flex items-center gap-1 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[11px] font-medium text-cyan-300">
+                  ✓ Verified
+                </span>
+              </div>
               <p className="text-sm text-slate-400">{user.email}</p>
-              <p className="text-xs text-slate-500">Joined {joined}</p>
+              <p className="text-xs text-slate-500">Member since {joined}</p>
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 border-t border-white/10 pt-5">
             <ProfileEditor
               userId={user.id}
               initialName={profile?.display_name ?? ""}
@@ -82,14 +97,13 @@ export default async function AccountPage() {
         {/* Stats */}
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {stats.map((s) => (
-            <div
-              key={s.label}
-              className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-center"
-            >
-              <div className="text-xl" aria-hidden>
+            <div key={s.label} className="glass rounded-2xl p-4 text-center">
+              <div className="text-lg" aria-hidden>
                 {s.icon}
               </div>
-              <div className="mt-1 text-2xl font-bold text-white">{s.value}</div>
+              <div className="font-display mt-1 text-2xl font-medium text-white">
+                {s.value}
+              </div>
               <div className="text-xs text-slate-500">{s.label}</div>
             </div>
           ))}

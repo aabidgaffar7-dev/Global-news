@@ -63,7 +63,7 @@ export default function ProfileEditor({
         <button
           onClick={save}
           disabled={saving}
-          className="rounded-full bg-sky-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:opacity-60"
+          className="aurora-bg rounded-full px-5 py-2 text-sm font-semibold text-[#07060f] transition hover:brightness-110 disabled:opacity-60"
         >
           {saving ? "Saving…" : "Save profile"}
         </button>

@@ -34,7 +34,7 @@ export default async function CategoryPage({
   const sources = [...new Set(articles.map((a) => a.source))];
 
   return (
-    <div className="min-h-screen bg-[#03040a] text-slate-200">
+    <div className="min-h-screen text-slate-200">
       <SiteHeader />
 
       <main className="mx-auto max-w-6xl px-5 pb-24 pt-8">
@@ -53,7 +53,9 @@ export default async function CategoryPage({
             {meta.emoji}
           </span>
           <div>
-            <h1 className="text-4xl font-bold text-white">{meta.label}</h1>
+            <h1 className="font-display text-4xl font-medium text-white">
+              {meta.label}
+            </h1>
             <p className="text-slate-400">{meta.description}</p>
           </div>
         </div>
@@ -80,7 +82,9 @@ export default async function CategoryPage({
         )}
 
         <div className="mt-8 mb-4 flex items-end justify-between">
-          <h2 className="text-2xl font-semibold text-white">Latest Articles</h2>
+          <h2 className="font-display text-2xl font-medium text-white">
+            Latest Articles
+          </h2>
           <span className="text-xs text-slate-500">Sorted by interest</span>
         </div>
 
@@ -126,7 +130,7 @@ function ArticleCard({
         </span>
       </div>
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="line-clamp-2 font-semibold text-slate-100 group-hover:text-white">
+        <h3 className="font-display line-clamp-2 font-medium text-slate-100 group-hover:text-white">
           {story.title}
         </h3>
         {story.summary && (

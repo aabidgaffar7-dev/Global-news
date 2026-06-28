@@ -50,25 +50,28 @@ export default async function FollowingPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-[#03040a] text-slate-200">
+    <div className="min-h-screen text-slate-200">
       <SiteHeader />
       <main className="mx-auto max-w-4xl px-5 pb-24 pt-8">
         <Link
           href="/"
-          className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white"
+          className="inline-flex items-center gap-1 text-sm text-slate-400 transition hover:text-white"
         >
           ← Back to Home
         </Link>
 
-        <h1 className="mt-5 text-3xl font-bold text-white">
-          <span aria-hidden>♥ </span>Following
+        <h1 className="font-display mt-6 flex items-center gap-2.5 text-3xl font-medium text-[#ece8e1] sm:text-4xl">
+          <span className="text-rose-400" aria-hidden>
+            ♥
+          </span>
+          <span className="aurora-text italic">Following</span>
         </h1>
         <p className="text-sm text-slate-400">
           Follow topics, locations, and keywords — your feed below updates to
           match.
         </p>
 
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+        <div className="glass mt-6 rounded-3xl p-6">
           <FollowManager
             userId={user.id}
             initialFollows={follows}
@@ -77,13 +80,15 @@ export default async function FollowingPage() {
           />
         </div>
 
-        <h2 className="mt-10 text-2xl font-semibold text-white">Latest Feed</h2>
+        <h2 className="font-display mt-10 text-2xl font-medium text-[#ece8e1]">
+          Latest <span className="aurora-text italic">Feed</span>
+        </h2>
         {follows.length === 0 ? (
-          <p className="mt-3 rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center text-slate-400">
+          <p className="glass mt-4 rounded-2xl p-8 text-center text-slate-400">
             Follow a topic, location, or keyword above to build your feed.
           </p>
         ) : feed.length === 0 ? (
-          <p className="mt-3 rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center text-slate-400">
+          <p className="glass mt-4 rounded-2xl p-8 text-center text-slate-400">
             Nothing new from your follows right now — check back soon.
           </p>
         ) : (
@@ -105,22 +110,22 @@ function FeedRow({ story }: { story: Story }) {
     <li>
       <Link
         href={`/article/${story.id}`}
-        className="group block rounded-xl border border-white/10 bg-white/[0.02] p-4 transition hover:border-sky-400/40 hover:bg-white/[0.05]"
+        className="group glass block rounded-2xl p-4 transition hover:border-white/25 hover:bg-white/[0.05]"
       >
-        <div className="mb-1 flex items-center gap-2 text-[11px]">
+        <div className="mb-1.5 flex flex-wrap items-center gap-2 text-[11px]">
           <span
             className="rounded-full px-1.5 py-0.5 font-medium"
             style={{ color: cat.color, background: `${cat.color}1a` }}
           >
             {cat.emoji} {cat.label}
           </span>
-          <span className="font-medium text-slate-400">{story.source}</span>
+          <span className="font-medium text-slate-300">{story.source}</span>
           <span style={{ color: lean.color }}>· {lean.label}</span>
           <span className="text-slate-500">
             · 📍 {story.city} · {timeAgo(story.publishedAt)}
           </span>
         </div>
-        <h3 className="font-medium text-slate-100 group-hover:text-white">
+        <h3 className="font-display font-medium text-[#ece8e1] group-hover:text-white">
           {story.title}
         </h3>
         {story.summary && (
