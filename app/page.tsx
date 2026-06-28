@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
+import TrendingTicker from "@/components/TrendingTicker";
 import GlobeExplorer from "@/components/GlobeExplorer";
 import StoryImage from "@/components/StoryImage";
 import {
@@ -8,11 +9,15 @@ import {
   storiesInCategory,
   type Story,
 } from "@/lib/news";
-import { CATEGORY_META, DISPLAY_CATEGORIES, type Category } from "@/lib/categories";
+import {
+  CATEGORY_META,
+  DISPLAY_CATEGORIES,
+  type Category,
+} from "@/lib/categories";
 import { LEAN_META } from "@/lib/feeds";
 import { formatCount, timeAgo } from "@/lib/format";
 
-export const revalidate = 600; // rebuild from cached feeds every 10 min
+export const revalidate = 600;
 
 export default async function Home() {
   const stories = await getAllStories();
@@ -20,43 +25,52 @@ export default async function Home() {
   const popular = stories.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-[#03040a] text-slate-200">
+    <div className="min-h-screen text-slate-200">
       <SiteHeader />
+      <TrendingTicker stories={stories.slice(0, 14)} />
 
       <main className="mx-auto max-w-6xl px-5 pb-24">
         {/* Hero */}
-        <section className="py-12 text-center sm:py-16">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
-            <span aria-hidden>✨ </span>
-            <span className="bg-gradient-to-r from-sky-300 via-white to-indigo-300 bg-clip-text text-transparent">
-              Global News Hub
-            </span>
-            <span aria-hidden> ✨</span>
+        <section className="py-9 text-center sm:py-12">
+          <div className="text-xs uppercase tracking-[0.25em] text-cyan-300/70">
+            A neutral, popularity-ranked world news hub
+          </div>
+          <h1 className="font-display mx-auto mt-4 max-w-3xl text-balance text-4xl font-medium leading-[1.1] text-[#ece8e1] sm:text-6xl">
+            The world&apos;s news,{" "}
+            <span className="aurora-text italic">ranked by people</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base text-slate-400 sm:text-lg">
-            Explore a global unbiased news network to feed your interests
+          <p className="mx-auto mt-5 max-w-xl text-pretty text-base text-slate-400 sm:text-lg">
+            Spin the globe, drop into any place, and read what people actually
+            care about — not what an algorithm wants you to see.
           </p>
           <form
             action="/search"
-            className="mx-auto mt-8 flex max-w-2xl items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 focus-within:border-sky-400/40"
+            className="mx-auto mt-9 flex max-w-2xl items-center gap-3 rounded-full border border-white/[0.12] bg-white/[0.03] px-5 py-3.5 backdrop-blur transition focus-within:border-cyan-400/40"
           >
-            <span className="text-slate-500">🔍</span>
+            <span className="text-slate-500" aria-hidden>
+              🔍
+            </span>
             <input
               type="text"
               name="q"
-              placeholder="Search locations, news sources, articles..."
+              placeholder="Search locations, sources, or the wider web…"
               className="w-full bg-transparent text-sm text-slate-200 outline-none placeholder:text-slate-500"
             />
           </form>
         </section>
 
         {/* Interactive Earth */}
-        <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:p-6">
-          <h2 className="flex items-center gap-2 text-2xl font-semibold text-white">
-            <span aria-hidden>🌐</span> Interactive Earth
-          </h2>
+        <section className="glass rounded-3xl p-5 sm:p-6">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl" aria-hidden>
+              🌐
+            </span>
+            <h2 className="font-display text-2xl font-medium text-[#ece8e1]">
+              Interactive Earth
+            </h2>
+          </div>
           <p className="mt-1 text-sm text-slate-400">
-            Click on the glowing markers to discover regional news
+            Spin the globe and drop into any region&apos;s top stories.
           </p>
           <div className="mt-5">
             <GlobeExplorer locations={locations} />
@@ -64,40 +78,41 @@ export default async function Home() {
         </section>
 
         {/* Popular Now */}
-        <section className="mt-16 text-center">
-          <h2 className="text-3xl font-bold text-white">
-            <span aria-hidden>✨ </span>Popular Now<span aria-hidden> ✨</span>
+        <section className="mt-20 text-center">
+          <div className="text-xs uppercase tracking-[0.25em] text-cyan-300/70">
+            Trending across the globe
+          </div>
+          <h2 className="font-display mt-3 text-3xl font-medium text-[#ece8e1] sm:text-4xl">
+            Popular <span className="aurora-text italic">Now</span>
           </h2>
           <p className="mt-2 text-slate-400">
-            The top 3 most-read stories across the globe
+            The stories people are reading most — ranked by readers, not
+            algorithms.
           </p>
 
           {popular.length === 0 ? (
-            <p className="mt-8 rounded-xl border border-white/10 bg-white/[0.02] p-8 text-slate-400">
+            <p className="glass mt-8 rounded-2xl p-8 text-slate-400">
               Stories are warming up — refresh in a moment.
             </p>
           ) : (
-            <div className="mt-8 grid gap-5 md:grid-cols-3">
+            <div className="mt-9 grid gap-5 md:grid-cols-3">
               {popular.map((story, i) => (
                 <PopularCard key={story.id} story={story} rank={i + 1} />
               ))}
             </div>
           )}
-          <p className="mt-6 text-xs text-slate-500">
-            Ranked by reader interest · updated every 10 minutes
-          </p>
         </section>
 
         {/* Explore by Category */}
-        <section className="mt-16">
-          <h2 className="text-center text-3xl font-bold text-white">
-            <span aria-hidden>📰 </span>Explore by Category
+        <section className="mt-20">
+          <h2 className="font-display text-center text-3xl font-medium text-[#ece8e1] sm:text-4xl">
+            Explore by <span className="aurora-text italic">Category</span>
           </h2>
           <p className="mt-2 text-center text-slate-400">
-            Discover news that matters to you
+            Discover the news that matters to you.
           </p>
 
-          <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-9 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {DISPLAY_CATEGORIES.map((category) => {
               const inCat = storiesInCategory(stories, category);
               return (
@@ -114,13 +129,17 @@ export default async function Home() {
       </main>
 
       <footer className="border-t border-white/5 py-8 text-center text-xs text-slate-600">
-        Global News Hub · a neutral, popularity-ranked world news hub · prototype
+        Global News Hub · a neutral, popularity-ranked world news hub
       </footer>
     </div>
   );
 }
 
-const RANK_BADGE = ["from-sky-500 to-blue-600", "from-violet-500 to-purple-600", "from-emerald-500 to-green-600"];
+const RANK_BADGE = [
+  "from-cyan-400 to-violet-500",
+  "from-violet-400 to-pink-500",
+  "from-emerald-400 to-teal-500",
+];
 
 function PopularCard({ story, rank }: { story: Story; rank: number }) {
   const cat = CATEGORY_META[story.category];
@@ -128,24 +147,25 @@ function PopularCard({ story, rank }: { story: Story; rank: number }) {
   return (
     <Link
       href={`/article/${story.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] text-left transition hover:border-sky-400/40 hover:bg-white/[0.05]"
+      className="group glass flex flex-col overflow-hidden rounded-2xl text-left transition hover:border-white/25 hover:bg-white/[0.05]"
     >
       <div className="relative h-44 w-full">
         <StoryImage src={story.imageUrl} className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#07060f]/85 via-transparent to-transparent" />
         <span
-          className={`absolute left-3 top-3 rounded-full bg-gradient-to-r ${RANK_BADGE[rank - 1] ?? RANK_BADGE[0]} px-2.5 py-1 text-xs font-semibold text-white shadow`}
+          className={`absolute left-3 top-3 rounded-full bg-gradient-to-r ${RANK_BADGE[rank - 1] ?? RANK_BADGE[0]} px-2.5 py-1 text-xs font-medium text-[#07060f]`}
         >
           #{rank} Most Popular
         </span>
         <span
           className="absolute right-3 top-3 rounded-full px-2 py-0.5 text-[11px] font-medium"
-          style={{ color: cat.color, background: "rgba(0,0,0,0.55)" }}
+          style={{ color: cat.color, background: "rgba(7,6,15,0.6)" }}
         >
-          {cat.label}
+          {cat.emoji} {cat.label}
         </span>
       </div>
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="line-clamp-2 font-semibold text-slate-100 group-hover:text-white">
+        <h3 className="font-display line-clamp-2 text-lg font-medium text-[#ece8e1] group-hover:text-white">
           {story.title}
         </h3>
         {story.summary && (
@@ -153,8 +173,8 @@ function PopularCard({ story, rank }: { story: Story; rank: number }) {
             {story.summary}
           </p>
         )}
-        <div className="mt-3 flex items-center gap-2 border-t border-white/5 pt-3 text-[11px] text-slate-500">
-          <span className="font-medium text-slate-400">{story.source}</span>
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/5 pt-3 text-[11px] text-slate-500">
+          <span className="font-medium text-slate-300">{story.source}</span>
           <span
             className="rounded-full px-1.5 py-0.5"
             style={{ color: lean.color, background: `${lean.color}1a` }}
@@ -163,9 +183,7 @@ function PopularCard({ story, rank }: { story: Story; rank: number }) {
           </span>
           <span>· 📍 {story.city}</span>
           {story.views ? <span>· 👁 {formatCount(story.views)}</span> : null}
-          <span className="ml-auto text-sky-400 group-hover:text-sky-300">
-            Read More →
-          </span>
+          <span className="aurora-text ml-auto font-medium">Read →</span>
         </div>
       </div>
     </Link>
@@ -183,21 +201,26 @@ function CategoryCard({
 }) {
   const meta = CATEGORY_META[category];
   return (
-    <div className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+    <div className="glass flex flex-col rounded-2xl p-5">
       <div className="flex items-center gap-3">
         <span
           className="flex h-11 w-11 items-center justify-center rounded-xl text-xl"
-          style={{ background: `${meta.color}22` }}
+          style={{
+            background: `${meta.color}1f`,
+            boxShadow: `0 0 20px ${meta.color}22`,
+          }}
         >
           {meta.emoji}
         </span>
         <div className="flex-1">
-          <h3 className="font-semibold text-white">{meta.label}</h3>
+          <h3 className="font-display text-lg font-medium text-[#ece8e1]">
+            {meta.label}
+          </h3>
           <p className="text-xs text-slate-400">{meta.description}</p>
         </div>
       </div>
       <p className="mt-3 text-xs text-slate-500">
-        {count} {count === 1 ? "article" : "articles"} available
+        {count} {count === 1 ? "article" : "articles"}
       </p>
 
       <ul className="mt-3 flex-1 space-y-2">
@@ -210,7 +233,10 @@ function CategoryCard({
               href={`/article/${story.id}`}
               className="group flex items-start gap-2 rounded-lg p-1.5 transition hover:bg-white/5"
             >
-              <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: meta.color }} />
+              <span
+                className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full"
+                style={{ background: meta.color }}
+              />
               <span className="min-w-0">
                 <span className="line-clamp-2 text-sm text-slate-200 group-hover:text-white">
                   {story.title}
@@ -226,9 +252,10 @@ function CategoryCard({
 
       <Link
         href={`/category/${category}`}
-        className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-sky-400 hover:text-sky-300"
+        className="mt-3 inline-flex items-center gap-1 text-sm font-medium transition hover:gap-2"
+        style={{ color: meta.color }}
       >
-        View All {meta.label} News →
+        View all {meta.label} →
       </Link>
     </div>
   );

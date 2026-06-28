@@ -78,7 +78,7 @@ export default function GlobeExplorer({
     <div className="relative w-full">
       <div
         ref={containerRef}
-        className="h-[68vh] min-h-[420px] w-full overflow-hidden rounded-2xl border border-white/10 bg-[#05070f]"
+        className="h-[56vh] min-h-[380px] w-full overflow-hidden rounded-2xl border border-white/10 bg-[#05070f]"
       >
         {size.w > 0 && (
           <Globe
@@ -89,8 +89,8 @@ export default function GlobeExplorer({
             backgroundColor="rgba(0,0,0,0)"
             globeImageUrl={EARTH}
             backgroundImageUrl={SKY}
-            atmosphereColor="#38bdf8"
-            atmosphereAltitude={0.18}
+            atmosphereColor="#9d8cff"
+            atmosphereAltitude={0.24}
             pointsData={locations}
             pointLat="lat"
             pointLng="lng"
@@ -135,11 +135,13 @@ function StoryPanel({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-white/10 bg-[#070a14]/95 shadow-2xl backdrop-blur-xl">
+    <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-white/10 bg-[#07060f]/95 shadow-2xl backdrop-blur-xl">
       <div className="flex items-start justify-between border-b border-white/10 p-5">
-        <h2 className="flex items-center gap-2 text-xl font-semibold text-white">
-          <span className="text-sky-400">📍</span>
-          <span>
+        <h2 className="flex items-center gap-2 text-xl font-medium text-white">
+          <span className="text-cyan-300" aria-hidden>
+            📍
+          </span>
+          <span className="font-display">
             Top News from {location.city}
             <span className="block text-sm font-normal text-slate-400">
               {location.country}
@@ -156,8 +158,8 @@ function StoryPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1 text-xs font-medium text-sky-300">
-          <span>📈</span> Top {location.storyCount} Most Popular Stories
+        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-medium text-cyan-300">
+          <span aria-hidden>📈</span> Top {location.storyCount} Most Popular Stories
         </div>
         <ul className="space-y-3">
           {location.stories.map((story, i) => (
@@ -179,7 +181,7 @@ function StoryRow({ story, rank }: { story: Story; rank: number }) {
     <li>
       <Link
         href={`/article/${story.id}`}
-        className="group block rounded-xl border border-white/5 bg-white/[0.02] p-3 transition hover:border-sky-400/40 hover:bg-white/[0.05]"
+        className="group block rounded-xl border border-white/5 bg-white/[0.02] p-3 transition hover:border-cyan-400/40 hover:bg-white/[0.05]"
       >
         <div className="flex gap-3">
           <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-slate-800">
@@ -188,12 +190,12 @@ function StoryRow({ story, rank }: { story: Story; rank: number }) {
               className="h-full w-full object-cover"
               fallbackClassName="flex h-full w-full items-center justify-center text-xl"
             />
-            <span className="absolute left-1 top-1 rounded-full bg-sky-500 px-1.5 text-[10px] font-bold text-white">
+            <span className="aurora-bg absolute left-1 top-1 rounded-full px-1.5 text-[10px] font-bold text-[#07060f]">
               #{rank}
             </span>
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="line-clamp-2 text-sm font-medium text-slate-100 group-hover:text-white">
+            <h3 className="font-display line-clamp-2 text-sm font-medium text-slate-100 group-hover:text-white">
               {story.title}
             </h3>
             {story.summary && (
@@ -215,9 +217,7 @@ function StoryRow({ story, rank }: { story: Story; rank: number }) {
             <span>· {timeAgo(story.publishedAt)}</span>
             {story.views ? <span>· 👁 {formatCount(story.views)}</span> : null}
           </span>
-          <span className="font-medium text-sky-400 group-hover:text-sky-300">
-            Read More →
-          </span>
+          <span className="aurora-text font-medium">Read More →</span>
         </div>
       </Link>
     </li>
