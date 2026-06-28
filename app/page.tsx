@@ -60,7 +60,7 @@ export default async function Home() {
         </section>
 
         {/* Interactive Earth */}
-        <section className="glass rounded-3xl p-5 sm:p-6">
+        <section id="globe" className="glass scroll-mt-20 rounded-3xl p-5 sm:p-6">
           <div className="flex items-center gap-2.5">
             <span className="text-xl" aria-hidden>
               🌐

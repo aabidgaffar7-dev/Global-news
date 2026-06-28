@@ -87,6 +87,10 @@ body {
   font-family: var(--font-serif), Georgia, serif;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 @keyframes ticker {
   from {
     transform: translateX(0);

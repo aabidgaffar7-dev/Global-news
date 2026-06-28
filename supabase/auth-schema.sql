@@ -39,7 +39,7 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- ── Follows ────────────────────────────────────────────────────────────────
--- kind ∈ 'category' | 'location' | 'keyword'; value = the slug / city / keyword.
+-- kind ∈ 'category' | 'location' | 'source' | 'keyword'; value = slug / city / feed-id / keyword.
 create table if not exists public.follows (
   id         uuid primary key default gen_random_uuid(),
   user_id    uuid not null references auth.users (id) on delete cascade,
