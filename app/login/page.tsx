@@ -24,8 +24,8 @@ export default async function LoginPage() {
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.02] p-8">
           <h1 className="font-display text-2xl font-medium text-white">
-            <span aria-hidden>✨ </span>Welcome to{" "}
-            <span className="aurora-text italic">Global News Hub</span>
+            <span aria-hidden>✨ </span>Welcome to Globe
+            <span className="aurora-text italic">News</span>
           </h1>
           <p className="mt-1 text-sm text-slate-400">
             Sign in to follow regions &amp; topics, get personalized For You

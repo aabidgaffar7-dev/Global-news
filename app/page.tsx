@@ -136,10 +136,6 @@ export default async function Home() {
           </div>
         </section>
       </main>
-
-      <footer className="border-t border-white/5 py-8 text-center text-xs text-slate-600">
-        Global News Hub · a neutral, popularity-ranked world news hub
-      </footer>
     </div>
   );
 }

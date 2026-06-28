@@ -1,8 +1,11 @@
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import ReadSourceButton from "@/components/ReadSourceButton";
+import ShareButton from "@/components/ShareButton";
+import StoryImage from "@/components/StoryImage";
 import { resolveStory, summarizeStory } from "@/lib/article";
 import { recordEngagement } from "@/lib/engagement";
+import { getAllStories, type Story } from "@/lib/news";
 import { getUser, getServerSupabase } from "@/lib/supabase-server";
 import { LEAN_META } from "@/lib/feeds";
 import { CATEGORY_META } from "@/lib/categories";
@@ -66,16 +69,50 @@ export default async function ArticlePage({
   const lean = LEAN_META[story.lean];
   const cat = CATEGORY_META[story.category];
 
+  // Related coverage + read-next, computed in-memory over the live feed.
+  const all = await getAllStories();
+  const others = all.filter((s) => s.id !== story.id && s.link !== story.link);
+  const STOP = new Set(
+    "the a an of to in on and for with as at by from is are was were will would after over amid says say new but has have had its their they them this that than into out up off about more most amp".split(
+      " ",
+    ),
+  );
+  const keywords = (t: string) =>
+    new Set(
+      (t.toLowerCase().match(/[a-z]{4,}/g) ?? []).filter((w) => !STOP.has(w)),
+    );
+  const myKw = keywords(story.title);
+  const coverage = others
+    .map((s) => {
+      const sk = keywords(s.title);
+      let overlap = 0;
+      for (const w of sk) if (myKw.has(w)) overlap++;
+      return { s, overlap };
+    })
+    .filter((x) => x.overlap >= 2 && x.s.source !== story.source)
+    .sort((a, b) => b.overlap - a.overlap)
+    .slice(0, 4)
+    .map((x) => x.s);
+  const coverageIds = new Set(coverage.map((s) => s.id));
+  const readNext = others
+    .filter((s) => !coverageIds.has(s.id) && s.category === story.category)
+    .slice(0, 6);
+  const catList = all.filter((s) => s.category === story.category);
+  const rankInCat = catList.findIndex((s) => s.id === story.id) + 1;
+
   return (
     <div className="min-h-screen text-slate-200">
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-5 pb-24 pt-8">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white"
-        >
-          ← Back to Home
-        </Link>
+        <div className="flex items-center justify-between gap-3">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white"
+          >
+            ← Back to Home
+          </Link>
+          <ShareButton title={story.title} path={`/article/${id}`} />
+        </div>
 
         {/* Meta */}
         <div className="mt-5 flex flex-wrap items-center gap-2 text-xs">
@@ -96,6 +133,11 @@ export default async function ArticlePage({
             {story.city ? `· 📍 ${story.city}, ${story.country} · ` : "· "}
             {timeAgo(story.publishedAt)}
           </span>
+          {rankInCat >= 1 && rankInCat <= 10 && (
+            <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 font-medium text-amber-300">
+              🔥 #{rankInCat} most-read in {cat.label}
+            </span>
+          )}
         </div>
 
         <h1 className="font-display mt-3 text-3xl font-medium leading-tight text-white sm:text-4xl">
@@ -136,7 +178,40 @@ export default async function ArticlePage({
           />
         </div>
 
-        <p className="mt-6 text-center text-[11px] text-slate-600">
+        {coverage.length > 0 && (
+          <section className="mt-10">
+            <h2 className="font-display text-xl font-medium text-[#ece8e1]">
+              How other outlets are covering this
+            </h2>
+            <p className="mt-1 text-sm text-slate-400">
+              The same story across the spectrum — compare the framing, and the
+              lean.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {coverage.map((s) => (
+                <RelatedCard key={s.id} story={s} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {readNext.length > 0 && (
+          <section className="mt-10">
+            <h2 className="font-display text-xl font-medium text-[#ece8e1]">
+              Read <span className="aurora-text italic">next</span>
+            </h2>
+            <p className="mt-1 text-sm text-slate-400">
+              More {cat.label.toLowerCase()} stories readers are opening now.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {readNext.map((s) => (
+                <RelatedCard key={s.id} story={s} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <p className="mt-10 text-center text-[11px] text-slate-600">
           AI-generated summary — always verify important details against the
           original source.
         </p>
@@ -191,5 +266,28 @@ function SummaryBody({
             : "The summary couldn't be generated right now. Read the full story at the source below."}
       </p>
     </div>
+  );
+}
+
+function RelatedCard({ story }: { story: Story }) {
+  const lean = LEAN_META[story.lean];
+  return (
+    <Link
+      href={`/article/${story.id}`}
+      className="group glass flex gap-3 rounded-2xl p-3 transition hover:-translate-y-0.5 hover:border-white/25"
+    >
+      <div className="relative hidden h-16 w-20 shrink-0 overflow-hidden rounded-lg sm:block">
+        <StoryImage src={story.imageUrl} className="h-full w-full object-cover" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+          <span className="font-medium text-slate-300">{story.source}</span>
+          <span style={{ color: lean.color }}>· {lean.label}</span>
+        </div>
+        <h3 className="font-display line-clamp-2 text-sm font-medium text-[#ece8e1] group-hover:text-white">
+          {story.title}
+        </h3>
+      </div>
+    </Link>
   );
 }
