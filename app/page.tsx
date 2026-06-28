@@ -22,7 +22,7 @@ export const revalidate = 600;
 export default async function Home() {
   const stories = await getAllStories();
   const locations = groupByLocation(stories);
-  const popular = stories.slice(0, 3);
+  const popular = stories.slice(0, 6);
 
   return (
     <div className="min-h-screen text-slate-200">
@@ -95,11 +95,20 @@ export default async function Home() {
               Stories are warming up — refresh in a moment.
             </p>
           ) : (
-            <div className="mt-9 grid gap-5 md:grid-cols-3">
-              {popular.map((story, i) => (
-                <PopularCard key={story.id} story={story} rank={i + 1} />
-              ))}
-            </div>
+            <>
+              <div className="mt-9 grid gap-5 md:grid-cols-3">
+                {popular.map((story, i) => (
+                  <PopularCard key={story.id} story={story} rank={i + 1} />
+                ))}
+              </div>
+              <Link
+                href="/popular"
+                className="mt-9 inline-flex items-center gap-1.5 rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/[0.04]"
+              >
+                View the full leaderboard{" "}
+                <span className="aurora-text">→</span>
+              </Link>
+            </>
           )}
         </section>
 
