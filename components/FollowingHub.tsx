@@ -55,6 +55,10 @@ const LEAN_ORDER: Lean[] = [
   "intl",
 ];
 
+// Collapsed previews so these (growing) lists don't dominate the page.
+const SOURCE_PREVIEW = 6;
+const LOCATION_PREVIEW = 8;
+
 export default function FollowingHub({
   userId,
   initialFollows,
@@ -75,6 +79,8 @@ export default function FollowingHub({
   const [keyword, setKeyword] = useState("");
   const [pending, setPending] = useState<Set<string>>(new Set());
   const [sourceSort, setSourceSort] = useState<"all" | "lean" | "region">("all");
+  const [showAllSources, setShowAllSources] = useState(false);
+  const [showAllLocations, setShowAllLocations] = useState(false);
 
   const isFollowed = (kind: string, value: string) =>
     follows.some((f) => f.kind === kind && f.value === value);
@@ -191,66 +197,28 @@ export default function FollowingHub({
   const allTopics = topics.map((t) => t.slug);
   const topicsAllFollowed = counts.topics === topics.length;
 
+  // Show a short preview by default (always including everything you follow,
+  // since followed items float to the front), with a "Show all" toggle.
+  const sourcePreviewN = Math.max(SOURCE_PREVIEW, counts.sources);
+  const visibleSources = showAllSources
+    ? orderedSources
+    : orderedSources.slice(0, sourcePreviewN);
+  const hasMoreSources = orderedSources.length > sourcePreviewN;
+
+  const orderedLocations = [...locations].sort(
+    (a, b) =>
+      Number(isFollowed("location", b.city)) -
+      Number(isFollowed("location", a.city)),
+  );
+  const locationPreviewN = Math.max(LOCATION_PREVIEW, counts.locations);
+  const visibleLocations = showAllLocations
+    ? orderedLocations
+    : orderedLocations.slice(0, locationPreviewN);
+  const hasMoreLocations = orderedLocations.length > locationPreviewN;
+
   return (
     <div className="space-y-12">
       <StatRibbon counts={counts} feedLength={feed.length} />
-
-      {/* ── Live Wire — your followed stories, up top ── */}
-      <section id="wire" className="scroll-mt-[130px]">
-        <div className="flex items-center gap-3">
-          <h2 className="font-display text-2xl font-medium text-[#ece8e1]">
-            Live <span className="aurora-text italic">Wire</span>
-          </h2>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider text-cyan-300">
-            <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-cyan-400" />
-            Live
-          </span>
-          {feed.length > 0 && (
-            <span className="text-sm text-slate-500">{feed.length} stories</span>
-          )}
-        </div>
-
-        {totalFollows === 0 ? (
-          <div className="glass mt-4 rounded-2xl p-10 text-center">
-            <p className="text-slate-200">
-              Your wire is quiet. Recruit a source or follow a topic to start the
-              presses.
-            </p>
-            <div className="mt-4 flex justify-center gap-3">
-              <a
-                href="#sources"
-                className="aurora-bg rounded-full px-4 py-2 text-sm font-semibold text-[#07060f] transition hover:brightness-110"
-              >
-                Browse sources
-              </a>
-              <a
-                href="#topics"
-                className="rounded-full border border-white/15 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/[0.06]"
-              >
-                Browse topics
-              </a>
-            </div>
-          </div>
-        ) : feed.length === 0 ? (
-          <p className="glass mt-4 rounded-2xl p-8 text-center text-slate-400">
-            Nothing on the wire from your follows right now — check back soon.
-          </p>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {feed.map((story) => (
-              <WireRow key={story.id} story={story} />
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* Divider into the follow-management section */}
-      <div className="flex items-center gap-3 pt-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Tune your newsroom
-        </span>
-        <span className="h-px flex-1 bg-white/10" />
-      </div>
 
       <LeanBalanceMeter leanCounts={leanCounts} total={counts.sources} />
 
@@ -279,7 +247,7 @@ export default function FollowingHub({
         }
       >
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {orderedSources.map((s) => (
+          {visibleSources.map((s) => (
             <SourceTile
               key={s.id}
               s={s}
@@ -289,6 +257,16 @@ export default function FollowingHub({
             />
           ))}
         </div>
+        {hasMoreSources && (
+          <button
+            onClick={() => setShowAllSources((v) => !v)}
+            className="mt-3 text-sm text-cyan-300/80 transition hover:text-cyan-200"
+          >
+            {showAllSources
+              ? "Show fewer ↑"
+              : `Show all ${orderedSources.length} sources →`}
+          </button>
+        )}
       </Desk>
 
       {/* ── Topics ── */}
@@ -331,7 +309,7 @@ export default function FollowingHub({
         subtitle={`${counts.locations} of ${locations.length} followed`}
       >
         <div className="flex flex-wrap gap-2.5">
-          {locations.map((l) => (
+          {visibleLocations.map((l) => (
             <LocationTile
               key={l.city}
               l={l}
@@ -341,6 +319,16 @@ export default function FollowingHub({
             />
           ))}
         </div>
+        {hasMoreLocations && (
+          <button
+            onClick={() => setShowAllLocations((v) => !v)}
+            className="mt-3 text-sm text-pink-300/80 transition hover:text-pink-200"
+          >
+            {showAllLocations
+              ? "Show fewer ↑"
+              : `Show all ${orderedLocations.length} places →`}
+          </button>
+        )}
       </Desk>
 
       {/* ── Keywords ── */}
@@ -388,6 +376,55 @@ export default function FollowingHub({
           </p>
         )}
       </Desk>
+
+      {/* ── Live Wire ── */}
+      <section id="wire" className="scroll-mt-[130px]">
+        <div className="flex items-center gap-3">
+          <h2 className="font-display text-2xl font-medium text-[#ece8e1]">
+            Live <span className="aurora-text italic">Wire</span>
+          </h2>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider text-cyan-300">
+            <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-cyan-400" />
+            Live
+          </span>
+          {feed.length > 0 && (
+            <span className="text-sm text-slate-500">{feed.length} stories</span>
+          )}
+        </div>
+
+        {totalFollows === 0 ? (
+          <div className="glass mt-4 rounded-2xl p-10 text-center">
+            <p className="text-slate-200">
+              Your wire is quiet. Recruit a source or follow a topic to start the
+              presses.
+            </p>
+            <div className="mt-4 flex justify-center gap-3">
+              <a
+                href="#sources"
+                className="aurora-bg rounded-full px-4 py-2 text-sm font-semibold text-[#07060f] transition hover:brightness-110"
+              >
+                Browse sources
+              </a>
+              <a
+                href="#topics"
+                className="rounded-full border border-white/15 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/[0.06]"
+              >
+                Browse topics
+              </a>
+            </div>
+          </div>
+        ) : feed.length === 0 ? (
+          <p className="glass mt-4 rounded-2xl p-8 text-center text-slate-400">
+            Nothing on the wire from your follows right now — check back soon.
+          </p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {feed.map((story) => (
+              <WireRow key={story.id} story={story} />
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
