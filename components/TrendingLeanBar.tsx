@@ -11,7 +11,15 @@ const ORDER: Lean[] = [
 
 // The political-lean spread of what's currently trending — the neutrality
 // mission, quantified honestly from real data (no fabricated score).
-export default function TrendingLeanBar({ leans }: { leans: Lean[] }) {
+export default function TrendingLeanBar({
+  leans,
+  title = "Today's trending mix",
+  caption,
+}: {
+  leans: Lean[];
+  title?: string;
+  caption?: string;
+}) {
   const total = leans.length;
   if (total === 0) return null;
   const counts = new Map<Lean, number>();
@@ -22,10 +30,10 @@ export default function TrendingLeanBar({ leans }: { leans: Lean[] }) {
     <div className="glass mx-auto mt-8 max-w-2xl rounded-2xl px-5 py-4 text-left">
       <div className="flex items-baseline justify-between">
         <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-          Today&apos;s trending mix
+          {title}
         </span>
         <span className="text-xs text-slate-500">
-          across {total} top stories
+          {caption ?? `across ${total} top stories`}
         </span>
       </div>
       <div className="mt-2.5 flex h-2.5 overflow-hidden rounded-full bg-white/5">

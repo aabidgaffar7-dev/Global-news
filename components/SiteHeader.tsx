@@ -25,25 +25,44 @@ export default function SiteHeader() {
         <nav className="flex items-center gap-1.5">
           <Link
             href="/following"
-            className={`rounded-full border px-4 py-1.5 text-sm transition ${
+            className={`rounded-full border px-3 py-1.5 text-sm transition sm:px-4 ${
               pathname === "/following"
                 ? "border-white/30 text-white"
                 : "border-white/[0.12] text-slate-300 hover:border-white/25 hover:text-white"
             }`}
           >
-            ♥ Following
+            ♥<span className="hidden sm:inline"> Following</span>
           </Link>
           <Link
             href="/for-you"
-            className={`aurora-bg rounded-full px-4 py-1.5 text-sm font-medium text-[#07060f] transition ${
+            className={`aurora-bg rounded-full px-3 py-1.5 text-sm font-medium text-[#07060f] transition sm:px-4 ${
               pathname === "/for-you" ? "ring-2 ring-white/40" : "hover:brightness-110"
             }`}
           >
-            ✦ For You
+            ✦<span className="hidden sm:inline"> For You</span>
           </Link>
         </nav>
 
         <div className="flex items-center gap-3">
+          <Link
+            href="/search"
+            aria-label="Search"
+            className="text-slate-400 transition hover:text-white"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          </Link>
           <NotificationBell />
           <Link
             href="/account"

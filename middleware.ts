@@ -34,7 +34,13 @@ export async function middleware(request: NextRequest) {
   // Gate protected routes at the edge so they cleanly 307 to /login before any
   // page renders — no shell flash, and correct for crawlers / no-JS. The
   // page-level redirect("/login") stays as defense-in-depth.
-  const PROTECTED = ["/account", "/following", "/for-you", "/saved"];
+  const PROTECTED = [
+    "/account",
+    "/following",
+    "/for-you",
+    "/saved",
+    "/history",
+  ];
   const path = request.nextUrl.pathname;
   if (!user && PROTECTED.some((p) => path === p || path.startsWith(`${p}/`))) {
     return NextResponse.redirect(new URL("/login", request.url));

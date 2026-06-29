@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import ProfileEditor from "@/components/ProfileEditor";
 import SignOutButton from "@/components/SignOutButton";
+import TrendingLeanBar from "@/components/TrendingLeanBar";
 import { getUser, getServerSupabase } from "@/lib/supabase-server";
+import { FEEDS, type Lean } from "@/lib/feeds";
 
 export const dynamic = "force-dynamic";
 
@@ -12,16 +14,24 @@ export default async function AccountPage() {
   if (!user) redirect("/login");
 
   const sb = await getServerSupabase();
-  const [{ data: profile }, { data: history }, { data: follows }] =
-    await Promise.all([
-      sb
-        .from("profiles")
-        .select("display_name,bio,created_at")
-        .eq("id", user.id)
-        .maybeSingle(),
-      sb.from("reading_history").select("source,category").eq("user_id", user.id),
-      sb.from("follows").select("kind").eq("user_id", user.id),
-    ]);
+  const [
+    { data: profile },
+    { data: history },
+    { data: follows },
+    { count: savedCount },
+  ] = await Promise.all([
+    sb
+      .from("profiles")
+      .select("display_name,bio,created_at")
+      .eq("id", user.id)
+      .maybeSingle(),
+    sb.from("reading_history").select("source,category").eq("user_id", user.id),
+    sb.from("follows").select("kind").eq("user_id", user.id),
+    sb
+      .from("saved")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id),
+  ]);
 
   const articlesRead = history?.length ?? 0;
   const sources = new Set((history ?? []).map((h) => h.source)).size;
@@ -41,6 +51,14 @@ export default async function AccountPage() {
     { label: "Categories", value: categories, icon: "🗂️" },
     { label: "Following", value: following, icon: "♥" },
   ];
+
+  // "Reading diet" — the lean spread of what they've actually read.
+  const SOURCE_LEAN = new Map(
+    FEEDS.map((f) => [f.name, f.lean] as [string, Lean]),
+  );
+  const readLeans = (history ?? [])
+    .map((h) => SOURCE_LEAN.get(h.source ?? ""))
+    .filter((l): l is Lean => Boolean(l));
 
   return (
     <div className="min-h-screen text-slate-200">
@@ -107,6 +125,57 @@ export default async function AccountPage() {
               <div className="text-xs text-slate-500">{s.label}</div>
             </div>
           ))}
+        </div>
+
+        {/* Reading diet — your media balance, made visible */}
+        {readLeans.length > 0 && (
+          <TrendingLeanBar
+            leans={readLeans}
+            title="Your reading diet"
+            caption={`across ${readLeans.length} reads`}
+          />
+        )}
+
+        {/* Quick links */}
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <Link
+            href="/saved"
+            className="glass flex items-center justify-between rounded-2xl p-5 transition hover:-translate-y-0.5 hover:border-white/25"
+          >
+            <span className="flex items-center gap-3">
+              <span className="text-xl" aria-hidden>
+                ★
+              </span>
+              <span>
+                <span className="font-display block font-medium text-[#ece8e1]">
+                  Saved articles
+                </span>
+                <span className="text-xs text-slate-500">
+                  {savedCount ?? 0} bookmarked
+                </span>
+              </span>
+            </span>
+            <span className="aurora-text">→</span>
+          </Link>
+          <Link
+            href="/history"
+            className="glass flex items-center justify-between rounded-2xl p-5 transition hover:-translate-y-0.5 hover:border-white/25"
+          >
+            <span className="flex items-center gap-3">
+              <span className="text-xl" aria-hidden>
+                🕘
+              </span>
+              <span>
+                <span className="font-display block font-medium text-[#ece8e1]">
+                  Reading history
+                </span>
+                <span className="text-xs text-slate-500">
+                  {articlesRead} read
+                </span>
+              </span>
+            </span>
+            <span className="aurora-text">→</span>
+          </Link>
         </div>
 
         <p className="mt-6 text-center text-xs text-slate-600">
