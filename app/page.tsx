@@ -1,6 +1,7 @@
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import TrendingTicker from "@/components/TrendingTicker";
+import TrendingLeanBar from "@/components/TrendingLeanBar";
 import GlobeExplorer from "@/components/GlobeExplorer";
 import StoryImage from "@/components/StoryImage";
 import {
@@ -89,6 +90,8 @@ export default async function Home() {
             The stories people are reading most — ranked by readers, not
             algorithms.
           </p>
+
+          <TrendingLeanBar leans={stories.slice(0, 15).map((s) => s.lean)} />
 
           {popular.length === 0 ? (
             <p className="glass mt-8 rounded-2xl p-8 text-slate-400">

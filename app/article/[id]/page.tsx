@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import ReadSourceButton from "@/components/ReadSourceButton";
@@ -14,6 +15,33 @@ import { timeAgo } from "@/lib/format";
 // Summary is generated from the live article at request time (ids are runtime
 // feed hashes, so we can't prerender them).
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const story = await resolveStory(id);
+  if (!story) return { title: "Story not found" };
+  const description =
+    story.summary?.slice(0, 160) ?? `${story.source} · ${story.city}`;
+  return {
+    title: story.title,
+    description,
+    openGraph: {
+      title: story.title,
+      description,
+      type: "article",
+      images: story.imageUrl ? [{ url: story.imageUrl }] : undefined,
+    },
+    twitter: {
+      card: story.imageUrl ? "summary_large_image" : "summary",
+      title: story.title,
+      description,
+    },
+  };
+}
 
 export default async function ArticlePage({
   params,

@@ -6,7 +6,7 @@ import type { ComponentType } from "react";
 import Link from "next/link";
 import StoryImage from "@/components/StoryImage";
 import type { NewsLocation, Story } from "@/lib/news";
-import { LEAN_META } from "@/lib/feeds";
+import { LEAN_META, type Lean } from "@/lib/feeds";
 import { formatCount, timeAgo } from "@/lib/format";
 
 // react-globe.gl touches `window`/WebGL, so it must never render on the server.
@@ -21,6 +21,31 @@ const Globe = dynamic(() => import("react-globe.gl"), {
 
 const EARTH = "/textures/earth-night.jpg";
 const SKY = "/textures/night-sky.png";
+
+// Each region's marker is tinted by its dominant source lean — turning the
+// globe into an at-a-glance neutrality map instead of uniform cyan dots.
+function dominantLean(loc: NewsLocation): Lean {
+  const counts = new Map<Lean, number>();
+  for (const s of loc.stories) counts.set(s.lean, (counts.get(s.lean) ?? 0) + 1);
+  let best: Lean = "center";
+  let max = -1;
+  for (const [l, c] of counts) if (c > max) ((max = c), (best = l));
+  return best;
+}
+function hexA(hex: string, a: number): string {
+  const n = Math.round(Math.max(0, Math.min(1, a)) * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return `${hex}${n}`;
+}
+const LEAN_LEGEND: Lean[] = [
+  "left",
+  "center-left",
+  "center",
+  "center-right",
+  "right",
+  "intl",
+];
 
 export default function GlobeExplorer({
   locations,
@@ -94,20 +119,24 @@ export default function GlobeExplorer({
             pointsData={locations}
             pointLat="lat"
             pointLng="lng"
-            pointColor={() => "#38bdf8"}
+            pointColor={(d: NewsLocation) => LEAN_META[dominantLean(d)].color}
             pointAltitude={0.01}
             pointRadius={(d: NewsLocation) =>
               0.35 + Math.min(d.storyCount, 12) * 0.045
             }
-            pointLabel={(d: NewsLocation) =>
-              `<div style="font-family:system-ui;font-size:12px;color:#e2e8f0;background:rgba(5,7,15,0.9);border:1px solid rgba(56,189,248,0.4);padding:6px 9px;border-radius:8px;">
-                 <b>${d.city}</b>, ${d.country}<br/>${d.storyCount} top stories</div>`
-            }
+            pointLabel={(d: NewsLocation) => {
+              const l = LEAN_META[dominantLean(d)];
+              return `<div style="font-family:system-ui;font-size:12px;color:#e2e8f0;background:rgba(5,7,15,0.9);border:1px solid rgba(56,189,248,0.4);padding:6px 9px;border-radius:8px;">
+                 <b>${d.city}</b>, ${d.country}<br/>${d.storyCount} top stories · <span style="color:${l.color}">${l.label}</span></div>`;
+            }}
             onPointClick={(d: NewsLocation) => focusLocation(d)}
             ringsData={locations}
             ringLat="lat"
             ringLng="lng"
-            ringColor={() => (t: number) => `rgba(56,189,248,${1 - t})`}
+            ringColor={(d: NewsLocation) => {
+              const c = LEAN_META[dominantLean(d)].color;
+              return (t: number) => hexA(c, 1 - t);
+            }}
             ringMaxRadius={2.2}
             ringPropagationSpeed={1.4}
             ringRepeatPeriod={1400}
@@ -119,6 +148,19 @@ export default function GlobeExplorer({
         Drag to spin · scroll to zoom · click a glowing marker to read that
         region&apos;s top stories
       </p>
+
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500">
+        <span className="text-slate-400">Marker colour = region&apos;s lean:</span>
+        {LEAN_LEGEND.map((l) => (
+          <span key={l} className="inline-flex items-center gap-1">
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ background: LEAN_META[l].color }}
+            />
+            {LEAN_META[l].label}
+          </span>
+        ))}
+      </div>
 
       {selected && (
         <StoryPanel location={selected} onClose={() => setSelected(null)} />
