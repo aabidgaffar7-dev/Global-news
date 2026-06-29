@@ -6,6 +6,7 @@ const LINKS: [string, string][] = [
   ["Most Popular", "/popular"],
   ["Following", "/following"],
   ["For You", "/for-you"],
+  ["Saved", "/saved"],
   ["About & Methodology", "/about"],
   ["Account", "/account"],
 ];

@@ -3,6 +3,7 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import ReadSourceButton from "@/components/ReadSourceButton";
 import ShareButton from "@/components/ShareButton";
+import SaveButton from "@/components/SaveButton";
 import StoryImage from "@/components/StoryImage";
 import { resolveStory, summarizeStory } from "@/lib/article";
 import { recordEngagement } from "@/lib/engagement";
@@ -79,6 +80,7 @@ export default async function ArticlePage({
   // If signed in, log to reading history (powers For You). Unique on
   // (user_id, link), so re-reads don't inflate counts.
   const user = await getUser();
+  let initialSaved = false;
   if (user) {
     const sb = await getServerSupabase();
     await sb.from("reading_history").upsert(
@@ -91,6 +93,14 @@ export default async function ArticlePage({
       },
       { onConflict: "user_id,link", ignoreDuplicates: true },
     );
+    // Resilient if the `saved` table isn't created yet — defaults to false.
+    const { data: savedRow } = await sb
+      .from("saved")
+      .select("link")
+      .eq("user_id", user.id)
+      .eq("link", story.link)
+      .maybeSingle();
+    initialSaved = !!savedRow;
   }
 
   const result = await summarizeStory(story);
@@ -139,7 +149,21 @@ export default async function ArticlePage({
           >
             ← Back to Home
           </Link>
-          <ShareButton title={story.title} path={`/article/${id}`} />
+          <div className="flex items-center gap-2">
+            <SaveButton
+              userId={user?.id ?? null}
+              initialSaved={initialSaved}
+              story={{
+                storyId: id,
+                link: story.link,
+                title: story.title,
+                source: story.source,
+                category: story.category,
+                imageUrl: story.imageUrl,
+              }}
+            />
+            <ShareButton title={story.title} path={`/article/${id}`} />
+          </div>
         </div>
 
         {/* Meta */}
