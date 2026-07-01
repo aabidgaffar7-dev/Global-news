@@ -25,7 +25,10 @@ export default async function AccountPage() {
       .select("display_name,bio,created_at")
       .eq("id", user.id)
       .maybeSingle(),
-    sb.from("reading_history").select("source,category").eq("user_id", user.id),
+    sb
+      .from("reading_history")
+      .select("source,category,viewed_at")
+      .eq("user_id", user.id),
     sb.from("follows").select("kind").eq("user_id", user.id),
     sb
       .from("saved")
@@ -59,6 +62,13 @@ export default async function AccountPage() {
   const readLeans = (history ?? [])
     .map((h) => SOURCE_LEAN.get(h.source ?? ""))
     .filter((l): l is Lean => Boolean(l));
+
+  const readDays = new Set(
+    (history ?? [])
+      .map((h) => (h.viewed_at ? String(h.viewed_at).slice(0, 10) : ""))
+      .filter(Boolean),
+  );
+  const streak = computeStreak(readDays);
 
   return (
     <div className="min-h-screen text-slate-200">
@@ -127,6 +137,14 @@ export default async function AccountPage() {
           ))}
         </div>
 
+        {streak > 0 && (
+          <div className="mt-6 text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-sm font-medium text-amber-300">
+              🔥 {streak}-day reading streak
+            </span>
+          </div>
+        )}
+
         {/* Reading diet — your media balance, made visible */}
         {readLeans.length > 0 && (
           <TrendingLeanBar
@@ -185,4 +203,18 @@ export default async function AccountPage() {
       </main>
     </div>
   );
+}
+
+// Consecutive-day reading streak (UTC), with a one-day grace if today's read
+// hasn't happened yet.
+function computeStreak(days: Set<string>): number {
+  const key = (d: Date) => d.toISOString().slice(0, 10);
+  const cursor = new Date();
+  if (!days.has(key(cursor))) cursor.setUTCDate(cursor.getUTCDate() - 1);
+  let streak = 0;
+  while (days.has(key(cursor))) {
+    streak++;
+    cursor.setUTCDate(cursor.getUTCDate() - 1);
+  }
+  return streak;
 }
