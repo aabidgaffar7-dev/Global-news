@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import CategoryArticles from "@/components/CategoryArticles";
+import TrendingLeanBar from "@/components/TrendingLeanBar";
 import { getAllStories, storiesInCategory } from "@/lib/news";
 import {
   CATEGORY_META,
@@ -77,6 +78,14 @@ export default async function CategoryPage({
               ))}
             </div>
           </div>
+        )}
+
+        {articles.length > 0 && (
+          <TrendingLeanBar
+            leans={articles.map((a) => a.lean)}
+            title={`${meta.label} coverage lean`}
+            caption={`across ${articles.length} stories`}
+          />
         )}
 
         <CategoryArticles

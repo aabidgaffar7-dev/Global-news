@@ -3,6 +3,7 @@ import SiteHeader from "@/components/SiteHeader";
 import TrendingTicker from "@/components/TrendingTicker";
 import TrendingLeanBar from "@/components/TrendingLeanBar";
 import OnboardingStrip from "@/components/OnboardingStrip";
+import RankInfo from "@/components/RankInfo";
 import GlobeExplorer from "@/components/GlobeExplorer";
 import StoryImage from "@/components/StoryImage";
 import {
@@ -93,6 +94,9 @@ export default async function Home() {
             The stories people are reading most — ranked by readers, not
             algorithms.
           </p>
+          <div className="mt-3">
+            <RankInfo />
+          </div>
 
           <TrendingLeanBar leans={stories.slice(0, 15).map((s) => s.lean)} />
 

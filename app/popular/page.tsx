@@ -1,6 +1,7 @@
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import StoryImage from "@/components/StoryImage";
+import RankInfo from "@/components/RankInfo";
 import { getAllStories, type Story } from "@/lib/news";
 import {
   CATEGORY_META,
@@ -73,6 +74,9 @@ export default async function PopularPage({
             Ranked by what readers actually open — the crowd decides, not an
             algorithm.
           </p>
+          <div className="mt-3">
+            <RankInfo />
+          </div>
         </header>
 
         {/* Filters */}
