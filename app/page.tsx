@@ -2,6 +2,7 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import TrendingTicker from "@/components/TrendingTicker";
 import TrendingLeanBar from "@/components/TrendingLeanBar";
+import OnboardingStrip from "@/components/OnboardingStrip";
 import GlobeExplorer from "@/components/GlobeExplorer";
 import StoryImage from "@/components/StoryImage";
 import {
@@ -31,6 +32,8 @@ export default async function Home() {
       <TrendingTicker stories={stories.slice(0, 14)} />
 
       <main className="mx-auto max-w-6xl px-5 pb-24">
+        <OnboardingStrip />
+
         {/* Hero */}
         <section className="py-9 text-center sm:py-12">
           <div className="text-xs uppercase tracking-[0.25em] text-cyan-300/70">
