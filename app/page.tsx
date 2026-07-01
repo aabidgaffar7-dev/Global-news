@@ -8,7 +8,7 @@ import GlobeExplorer from "@/components/GlobeExplorer";
 import StoryImage from "@/components/StoryImage";
 import {
   getAllStories,
-  groupByLocation,
+  globeLocations,
   storiesInCategory,
   type Story,
 } from "@/lib/news";
@@ -24,7 +24,7 @@ export const revalidate = 600;
 
 export default async function Home() {
   const stories = await getAllStories();
-  const locations = groupByLocation(stories);
+  const locations = globeLocations(stories);
   const popular = stories.slice(0, 6);
 
   return (

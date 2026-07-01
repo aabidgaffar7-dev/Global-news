@@ -2,6 +2,7 @@ import Parser from "rss-parser";
 import { FEEDS, type Feed, type Lean } from "./feeds";
 import { categorize, type Category } from "./categories";
 import { getPopularity } from "./engagement";
+import { CITIES, type City } from "./cities";
 
 export type Story = {
   id: string;
@@ -252,4 +253,107 @@ export function storiesInCategory(
   category: Category,
 ): Story[] {
   return stories.filter((s) => s.category === category);
+}
+
+// ── Geolocation: place a story where the news is (from its headline) ──
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+const CITY_MATCHERS = CITIES.map((c) => ({
+  city: c,
+  re: new RegExp(
+    `\\b(${[c.name, ...(c.aliases ?? [])].map(escapeRe).join("|")})\\b`,
+    "i",
+  ),
+}));
+
+// The city a story is most likely about — earliest mention wins, longer name
+// breaks ties. null when no gazetteer city is named.
+export function geolocate(text: string): City | null {
+  let best: { city: City; idx: number; len: number } | null = null;
+  for (const m of CITY_MATCHERS) {
+    const match = m.re.exec(text);
+    if (!match) continue;
+    const idx = match.index;
+    const len = match[0].length;
+    if (!best || idx < best.idx || (idx === best.idx && len > best.len)) {
+      best = { city: m.city, idx, len };
+    }
+  }
+  return best?.city ?? null;
+}
+
+export type GlobePoint = {
+  id: string;
+  city: string;
+  country: string;
+  lat: number;
+  lng: number;
+  tier: 1 | 2;
+  storyCount: number;
+  stories: Story[];
+  sources: string[];
+  dominantLean?: Lean;
+};
+
+// The globe's data: every major city as a base point, with stories dropped on
+// the city they're about (falling back to the outlet's HQ when none is named).
+export function globeLocations(stories: Story[]): GlobePoint[] {
+  const keyOf = (lat: number, lng: number) =>
+    `${lat.toFixed(2)},${lng.toFixed(2)}`;
+  const byKey = new Map<string, GlobePoint>();
+
+  for (const c of CITIES) {
+    byKey.set(keyOf(c.lat, c.lng), {
+      id: slugify(`${c.name}-${c.country}`),
+      city: c.name,
+      country: c.country,
+      lat: c.lat,
+      lng: c.lng,
+      tier: c.tier,
+      storyCount: 0,
+      stories: [],
+      sources: [],
+    });
+  }
+
+  for (const s of stories) {
+    const place = geolocate(`${s.title} ${s.summary ?? ""}`);
+    let key: string;
+    if (place) {
+      key = keyOf(place.lat, place.lng);
+    } else {
+      key = keyOf(s.lat, s.lng);
+      if (!byKey.has(key)) {
+        byKey.set(key, {
+          id: slugify(`${s.city}-${s.country}`),
+          city: s.city,
+          country: s.country,
+          lat: s.lat,
+          lng: s.lng,
+          tier: 2,
+          storyCount: 0,
+          stories: [],
+          sources: [],
+        });
+      }
+    }
+    byKey.get(key)!.stories.push(s);
+  }
+
+  for (const pt of byKey.values()) {
+    if (pt.stories.length === 0) continue;
+    pt.stories.sort((a, b) => b.score - a.score);
+    pt.stories = pt.stories.slice(0, 12);
+    pt.storyCount = pt.stories.length;
+    pt.sources = [...new Set(pt.stories.map((s) => s.source))];
+    const counts = new Map<Lean, number>();
+    for (const s of pt.stories) counts.set(s.lean, (counts.get(s.lean) ?? 0) + 1);
+    let bestLean: Lean | undefined;
+    let max = -1;
+    for (const [l, c] of counts) if (c > max) ((max = c), (bestLean = l));
+    pt.dominantLean = bestLean;
+  }
+
+  return [...byKey.values()];
 }

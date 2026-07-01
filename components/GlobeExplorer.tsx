@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ComponentType } from "react";
 import Link from "next/link";
 import StoryImage from "@/components/StoryImage";
-import type { NewsLocation, Story } from "@/lib/news";
+import type { GlobePoint, Story } from "@/lib/news";
 import { LEAN_META, type Lean } from "@/lib/feeds";
 import { formatCount, timeAgo } from "@/lib/format";
 
@@ -21,23 +21,15 @@ const Globe = dynamic(() => import("react-globe.gl"), {
 
 const EARTH = "/textures/earth-night.jpg";
 const SKY = "/textures/night-sky.png";
+const BASE_COLOR = "rgba(148,163,184,0.5)"; // faint dot for a city with no current news
 
-// Each region's marker is tinted by its dominant source lean — turning the
-// globe into an at-a-glance neutrality map instead of uniform cyan dots.
-function dominantLean(loc: NewsLocation): Lean {
-  const counts = new Map<Lean, number>();
-  for (const s of loc.stories) counts.set(s.lean, (counts.get(s.lean) ?? 0) + 1);
-  let best: Lean = "center";
-  let max = -1;
-  for (const [l, c] of counts) if (c > max) ((max = c), (best = l));
-  return best;
-}
 function hexA(hex: string, a: number): string {
   const n = Math.round(Math.max(0, Math.min(1, a)) * 255)
     .toString(16)
     .padStart(2, "0");
   return `${hex}${n}`;
 }
+
 const LEAN_LEGEND: Lean[] = [
   "left",
   "center-left",
@@ -50,14 +42,13 @@ const LEAN_LEGEND: Lean[] = [
 export default function GlobeExplorer({
   locations,
 }: {
-  locations: NewsLocation[];
+  locations: GlobePoint[];
 }) {
   const globeRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const [selected, setSelected] = useState<NewsLocation | null>(null);
+  const [selected, setSelected] = useState<GlobePoint | null>(null);
 
-  // Keep the canvas matched to its container.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -68,42 +59,48 @@ export default function GlobeExplorer({
     return () => ro.disconnect();
   }, []);
 
-  // One-time camera + controls setup. Driven by the Globe's onGlobeReady
-  // callback, NOT a size effect: react-globe.gl loads lazily via next/dynamic,
-  // so the ref isn't populated until the chunk resolves — a size-keyed effect
-  // fires too early, finds a null ref, and silently no-ops (no rotation/POV).
-  // Keeping it off resize also stops the camera snapping back to default when
-  // the viewport changes while a location panel is open.
+  // One-time camera + controls setup, incl. a generous zoom range so you can
+  // pull right out to space or drop close to the surface. Driven by
+  // onGlobeReady because react-globe.gl loads lazily (the ref is null earlier).
   function handleGlobeReady() {
     const g = globeRef.current;
     if (!g) return;
-    const controls = g.controls();
-    controls.autoRotate = !selected;
-    controls.autoRotateSpeed = 0.45;
-    controls.enableZoom = true;
-    g.pointOfView({ lat: 20, lng: 10, altitude: 2.4 }, 0);
+    const c = g.controls();
+    c.autoRotate = !selected;
+    c.autoRotateSpeed = 0.4;
+    c.enableZoom = true;
+    c.zoomSpeed = 1.1;
+    c.enableDamping = true;
+    c.dampingFactor = 0.1;
+    c.rotateSpeed = 0.8;
+    c.minDistance = 108; // globe radius is 100 — get close to the surface
+    c.maxDistance = 800; // …or way out into orbit
+    g.pointOfView({ lat: 20, lng: 10, altitude: 2.5 }, 0);
   }
 
-  // Pause auto-rotation while a location panel is open.
   useEffect(() => {
     const g = globeRef.current;
-    if (!g) return;
-    g.controls().autoRotate = !selected;
+    if (g) g.controls().autoRotate = !selected;
   }, [selected]);
 
-  function focusLocation(loc: NewsLocation) {
-    setSelected(loc);
+  function focus(loc: GlobePoint) {
+    if (loc.storyCount > 0) setSelected(loc);
     globeRef.current?.pointOfView(
-      { lat: loc.lat, lng: loc.lng, altitude: 1.7 },
+      { lat: loc.lat, lng: loc.lng, altitude: loc.storyCount > 0 ? 1.3 : 0.9 },
       1000,
     );
   }
+
+  const newsPoints = locations.filter((l) => l.storyCount > 0);
+  const labelPoints = locations.filter(
+    (l) => l.storyCount > 0 || l.tier === 1,
+  );
 
   return (
     <div className="relative w-full">
       <div
         ref={containerRef}
-        className="h-[56vh] min-h-[380px] w-full overflow-hidden rounded-2xl border border-white/10 bg-[#05070f]"
+        className="h-[60vh] min-h-[420px] w-full overflow-hidden rounded-2xl border border-white/10 bg-[#05070f]"
       >
         {size.w > 0 && (
           <Globe
@@ -115,42 +112,68 @@ export default function GlobeExplorer({
             globeImageUrl={EARTH}
             backgroundImageUrl={SKY}
             atmosphereColor="#9d8cff"
-            atmosphereAltitude={0.24}
+            atmosphereAltitude={0.22}
             pointsData={locations}
             pointLat="lat"
             pointLng="lng"
-            pointColor={(d: NewsLocation) => LEAN_META[dominantLean(d)].color}
-            pointAltitude={0.01}
-            pointRadius={(d: NewsLocation) =>
-              0.35 + Math.min(d.storyCount, 12) * 0.045
+            pointColor={(d: GlobePoint) =>
+              d.storyCount > 0 && d.dominantLean
+                ? LEAN_META[d.dominantLean].color
+                : BASE_COLOR
             }
-            pointLabel={(d: NewsLocation) => {
-              const l = LEAN_META[dominantLean(d)];
-              return `<div style="font-family:system-ui;font-size:12px;color:#e2e8f0;background:rgba(5,7,15,0.9);border:1px solid rgba(56,189,248,0.4);padding:6px 9px;border-radius:8px;">
-                 <b>${d.city}</b>, ${d.country}<br/>${d.storyCount} top stories · <span style="color:${l.color}">${l.label}</span></div>`;
+            pointAltitude={(d: GlobePoint) => (d.storyCount > 0 ? 0.02 : 0.005)}
+            pointRadius={(d: GlobePoint) =>
+              d.storyCount > 0
+                ? 0.28 + Math.min(d.storyCount, 12) * 0.05
+                : 0.1
+            }
+            pointLabel={(d: GlobePoint) => {
+              const lean = d.dominantLean ? LEAN_META[d.dominantLean] : null;
+              const body =
+                d.storyCount > 0
+                  ? `${d.storyCount} ${d.storyCount === 1 ? "story" : "stories"}${
+                      lean
+                        ? ` · <span style="color:${lean.color}">${lean.label}</span>`
+                        : ""
+                    }`
+                  : "no current stories";
+              return `<div style="font-family:system-ui;font-size:12px;color:#e2e8f0;background:rgba(5,7,15,0.92);border:1px solid rgba(56,189,248,0.35);padding:6px 9px;border-radius:8px;">
+                 <b>${d.city}</b>, ${d.country}<br/>${body}</div>`;
             }}
-            onPointClick={(d: NewsLocation) => focusLocation(d)}
-            ringsData={locations}
+            onPointClick={(d: GlobePoint) => focus(d)}
+            ringsData={newsPoints}
             ringLat="lat"
             ringLng="lng"
-            ringColor={(d: NewsLocation) => {
-              const c = LEAN_META[dominantLean(d)].color;
+            ringColor={(d: GlobePoint) => {
+              const c = d.dominantLean ? LEAN_META[d.dominantLean].color : "#38bdf8";
               return (t: number) => hexA(c, 1 - t);
             }}
-            ringMaxRadius={2.2}
+            ringMaxRadius={2}
             ringPropagationSpeed={1.4}
-            ringRepeatPeriod={1400}
+            ringRepeatPeriod={1600}
+            labelsData={labelPoints}
+            labelLat="lat"
+            labelLng="lng"
+            labelText="city"
+            labelSize={(d: GlobePoint) => (d.storyCount > 0 ? 0.85 : 0.55)}
+            labelColor={(d: GlobePoint) =>
+              d.storyCount > 0 ? "rgba(236,232,225,0.92)" : "rgba(148,163,184,0.55)"
+            }
+            labelResolution={2}
+            labelAltitude={0.008}
+            labelDotRadius={0}
+            onLabelClick={(d: GlobePoint) => focus(d)}
           />
         )}
       </div>
 
       <p className="mt-3 text-center text-xs text-slate-500">
-        Drag to spin · scroll to zoom · click a glowing marker to read that
-        region&apos;s top stories
+        Drag to spin · scroll to zoom · click a glowing city to read its top
+        stories
       </p>
 
       <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500">
-        <span className="text-slate-400">Marker colour = region&apos;s lean:</span>
+        <span className="text-slate-400">City colour = local lean:</span>
         {LEAN_LEGEND.map((l) => (
           <span key={l} className="inline-flex items-center gap-1">
             <span
@@ -160,6 +183,13 @@ export default function GlobeExplorer({
             {LEAN_META[l].label}
           </span>
         ))}
+        <span className="inline-flex items-center gap-1">
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ background: BASE_COLOR }}
+          />
+          quiet city
+        </span>
       </div>
 
       {selected && (
@@ -173,7 +203,7 @@ function StoryPanel({
   location,
   onClose,
 }: {
-  location: NewsLocation;
+  location: GlobePoint;
   onClose: () => void;
 }) {
   return (
@@ -201,7 +231,8 @@ function StoryPanel({
 
       <div className="flex-1 overflow-y-auto p-4">
         <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-medium text-cyan-300">
-          <span aria-hidden>📈</span> Top {location.storyCount} Most Popular Stories
+          <span aria-hidden>📈</span> Top {location.storyCount} Most Popular
+          Stories
         </div>
         <ul className="space-y-3">
           {location.stories.map((story, i) => (
