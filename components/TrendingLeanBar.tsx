@@ -7,6 +7,7 @@ const ORDER: Lean[] = [
   "center-right",
   "right",
   "intl",
+  "unrated",
 ];
 
 // The political-lean spread of what's currently trending — the neutrality

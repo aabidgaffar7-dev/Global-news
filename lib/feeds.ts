@@ -9,7 +9,8 @@ export type Lean =
   | "center"
   | "center-right"
   | "right"
-  | "intl"; // international / pan-regional outlet
+  | "intl" // international / pan-regional outlet
+  | "unrated"; // broad-API sources we haven't editorially rated
 
 export type Feed = {
   id: string;
@@ -182,4 +183,5 @@ export const LEAN_META: Record<Lean, { label: string; color: string }> = {
   "center-right": { label: "Center-right", color: "#fca5a5" },
   right: { label: "Right", color: "#f87171" },
   intl: { label: "International", color: "#c084fc" },
+  unrated: { label: "Unrated", color: "#64748b" },
 };

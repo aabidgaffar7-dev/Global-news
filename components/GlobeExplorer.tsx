@@ -37,6 +37,7 @@ const LEAN_LEGEND: Lean[] = [
   "center-right",
   "right",
   "intl",
+  "unrated",
 ];
 
 export default function GlobeExplorer({

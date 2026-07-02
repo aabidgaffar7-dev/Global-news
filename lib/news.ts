@@ -2,7 +2,8 @@ import Parser from "rss-parser";
 import { FEEDS, type Feed, type Lean } from "./feeds";
 import { categorize, type Category } from "./categories";
 import { getPopularity } from "./engagement";
-import { CITIES, type City } from "./cities";
+import { CITIES, geolocate } from "./cities";
+import { fetchBroadNews } from "./newsdata";
 
 export type Story = {
   id: string;
@@ -174,10 +175,13 @@ let cache: { at: number; stories: Story[] } | null = null;
 export async function getAllStories(): Promise<Story[]> {
   if (cache && Date.now() - cache.at < CACHE_TTL) return cache.stories;
 
-  const results = await Promise.all(FEEDS.map(fetchFeed));
+  const [results, broad] = await Promise.all([
+    Promise.all(FEEDS.map(fetchFeed)),
+    fetchBroadNews(), // NewsData.io wide/local coverage (no-op without key)
+  ]);
   const seen = new Set<string>();
   const deduped: Story[] = [];
-  for (const story of results.flat()) {
+  for (const story of [...results.flat(), ...broad]) {
     if (seen.has(story.link)) continue;
     seen.add(story.link);
     deduped.push(story);
@@ -253,34 +257,6 @@ export function storiesInCategory(
   category: Category,
 ): Story[] {
   return stories.filter((s) => s.category === category);
-}
-
-// ── Geolocation: place a story where the news is (from its headline) ──
-function escapeRe(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-const CITY_MATCHERS = CITIES.map((c) => ({
-  city: c,
-  re: new RegExp(
-    `\\b(${[c.name, ...(c.aliases ?? [])].map(escapeRe).join("|")})\\b`,
-    "i",
-  ),
-}));
-
-// The city a story is most likely about — earliest mention wins, longer name
-// breaks ties. null when no gazetteer city is named.
-export function geolocate(text: string): City | null {
-  let best: { city: City; idx: number; len: number } | null = null;
-  for (const m of CITY_MATCHERS) {
-    const match = m.re.exec(text);
-    if (!match) continue;
-    const idx = match.index;
-    const len = match[0].length;
-    if (!best || idx < best.idx || (idx === best.idx && len > best.len)) {
-      best = { city: m.city, idx, len };
-    }
-  }
-  return best?.city ?? null;
 }
 
 export type GlobePoint = {

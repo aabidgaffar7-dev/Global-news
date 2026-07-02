@@ -37,6 +37,22 @@ export const CITIES: City[] = [
   { name: "New Orleans", country: "United States", lat: 29.95, lng: -90.07, tier: 2 },
   { name: "Portland", country: "United States", lat: 45.52, lng: -122.68, tier: 2 },
   { name: "San Diego", country: "United States", lat: 32.72, lng: -117.16, tier: 2 },
+  { name: "Newark", country: "United States", lat: 40.74, lng: -74.17, tier: 2, aliases: ["New Jersey"] },
+  { name: "Jersey City", country: "United States", lat: 40.73, lng: -74.08, tier: 2 },
+  { name: "Trenton", country: "United States", lat: 40.22, lng: -74.76, tier: 2 },
+  { name: "Atlantic City", country: "United States", lat: 39.36, lng: -74.42, tier: 2 },
+  { name: "Baltimore", country: "United States", lat: 39.29, lng: -76.61, tier: 2 },
+  { name: "St. Louis", country: "United States", lat: 38.63, lng: -90.2, tier: 2, aliases: ["Saint Louis"] },
+  { name: "Pittsburgh", country: "United States", lat: 40.44, lng: -80.0, tier: 2 },
+  { name: "Charlotte", country: "United States", lat: 35.23, lng: -80.84, tier: 2 },
+  { name: "Nashville", country: "United States", lat: 36.16, lng: -86.78, tier: 2 },
+  { name: "Salt Lake City", country: "United States", lat: 40.76, lng: -111.89, tier: 2 },
+  { name: "Orlando", country: "United States", lat: 28.54, lng: -81.38, tier: 2 },
+  { name: "Tampa", country: "United States", lat: 27.95, lng: -82.46, tier: 2 },
+  { name: "Cleveland", country: "United States", lat: 41.5, lng: -81.69, tier: 2 },
+  { name: "Kansas City", country: "United States", lat: 39.1, lng: -94.58, tier: 2 },
+  { name: "Honolulu", country: "United States", lat: 21.31, lng: -157.86, tier: 2, aliases: ["Hawaii"] },
+  { name: "Anchorage", country: "United States", lat: 61.22, lng: -149.9, tier: 2, aliases: ["Alaska"] },
   { name: "Toronto", country: "Canada", lat: 43.65, lng: -79.38, tier: 1 },
   { name: "Montreal", country: "Canada", lat: 45.5, lng: -73.57, tier: 2 },
   { name: "Vancouver", country: "Canada", lat: 49.28, lng: -123.12, tier: 2 },
@@ -184,3 +200,56 @@ export const CITIES: City[] = [
   { name: "Auckland", country: "New Zealand", lat: -36.85, lng: 174.76, tier: 2 },
   { name: "Wellington", country: "New Zealand", lat: -41.29, lng: 174.78, tier: 2 },
 ];
+
+// ── Geolocation: which gazetteer city is a text about? ──
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+const CITY_MATCHERS = CITIES.map((c) => ({
+  city: c,
+  re: new RegExp(
+    `\\b(${[c.name, ...(c.aliases ?? [])].map(escapeRe).join("|")})\\b`,
+    "i",
+  ),
+}));
+
+// Earliest mention wins, longer name breaks ties. null = no city named.
+export function geolocate(text: string): City | null {
+  let best: { city: City; idx: number; len: number } | null = null;
+  for (const m of CITY_MATCHERS) {
+    const match = m.re.exec(text);
+    if (!match) continue;
+    const idx = match.index;
+    const len = match[0].length;
+    if (!best || idx < best.idx || (idx === best.idx && len > best.len)) {
+      best = { city: m.city, idx, len };
+    }
+  }
+  return best?.city ?? null;
+}
+
+// Fallback placement: country name → a representative city (tier 1 preferred).
+const COUNTRY_ALIASES: Record<string, string> = {
+  "united states of america": "united states",
+  "united arab emirates": "uae",
+  "czech republic": "czechia",
+  "republic of korea": "south korea",
+  "democratic republic of the congo": "dr congo",
+  "viet nam": "vietnam",
+  burma: "myanmar",
+};
+const COUNTRY_FALLBACK = (() => {
+  const map = new Map<string, City>();
+  for (const c of CITIES) {
+    const key = c.country.toLowerCase();
+    const existing = map.get(key);
+    if (!existing || (existing.tier === 2 && c.tier === 1)) map.set(key, c);
+  }
+  return map;
+})();
+
+export function cityForCountry(country: string): City | null {
+  const raw = country.trim().toLowerCase();
+  const key = COUNTRY_ALIASES[raw] ?? raw;
+  return COUNTRY_FALLBACK.get(key) ?? null;
+}
