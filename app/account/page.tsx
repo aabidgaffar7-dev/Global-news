@@ -106,9 +106,6 @@ export default async function AccountPage() {
                 <h2 className="font-display text-xl font-medium text-white">
                   {name}
                 </h2>
-                <span className="inline-flex items-center gap-1 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[11px] font-medium text-cyan-300">
-                  ✓ Verified
-                </span>
               </div>
               <p className="text-sm text-slate-400">{user.email}</p>
               <p className="text-xs text-slate-500">Member since {joined}</p>

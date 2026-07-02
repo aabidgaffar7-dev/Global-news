@@ -174,6 +174,48 @@ export const FEEDS: Feed[] = [
     lng: 28.0473,
     lean: "intl",
   },
+  // Genuine spectrum coverage — the lean transparency feature is meaningless
+  // if the roster only spans center-left to center.
+  {
+    id: "huffpost",
+    name: "HuffPost",
+    url: "https://chaski.huffpost.com/us/auto/vertical/front-page",
+    city: "New York",
+    country: "United States",
+    lat: 40.7128,
+    lng: -74.006,
+    lean: "left",
+  },
+  {
+    id: "nypost",
+    name: "New York Post",
+    url: "https://nypost.com/feed/",
+    city: "New York",
+    country: "United States",
+    lat: 40.7128,
+    lng: -74.006,
+    lean: "center-right",
+  },
+  {
+    id: "telegraph",
+    name: "The Telegraph",
+    url: "https://www.telegraph.co.uk/rss.xml",
+    city: "London",
+    country: "United Kingdom",
+    lat: 51.5074,
+    lng: -0.1278,
+    lean: "center-right",
+  },
+  {
+    id: "foxnews",
+    name: "Fox News",
+    url: "https://moxie.foxnews.com/google-publisher/latest.xml",
+    city: "New York",
+    country: "United States",
+    lat: 40.7128,
+    lng: -74.006,
+    lean: "right",
+  },
 ];
 
 export const LEAN_META: Record<Lean, { label: string; color: string }> = {

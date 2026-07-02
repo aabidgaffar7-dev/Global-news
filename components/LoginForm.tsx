@@ -1,11 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getBrowserSupabase } from "@/lib/supabase-browser";
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Return the user to the page that sent them here (same-origin paths only);
+  // with no destination, land on For You — the payoff page — not the homepage.
+  const rawNext = searchParams.get("next");
+  const next =
+    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
+      ? rawNext
+      : "/for-you";
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +51,7 @@ export default function LoginForm() {
       if (error) return setError(error.message);
     }
 
-    router.push("/");
+    router.push(next);
     router.refresh();
   }
 

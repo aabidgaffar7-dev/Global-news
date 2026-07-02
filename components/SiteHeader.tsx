@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import NotificationBell from "@/components/NotificationBell";
+import UserMenu from "@/components/UserMenu";
 import { CATEGORY_META, DISPLAY_CATEGORIES } from "@/lib/categories";
 
 export default function SiteHeader() {
@@ -119,12 +120,7 @@ export default function SiteHeader() {
             </svg>
           </Link>
           <NotificationBell />
-          <Link
-            href="/account"
-            aria-label="Account"
-            className="block h-8 w-8 shrink-0 rounded-full ring-2 ring-white/10"
-            style={{ background: "linear-gradient(135deg,#8b5cf6,#6366f1)" }}
-          />
+          <UserMenu />
           <button
             onClick={() => setMenuOpen((o) => !o)}
             aria-label="Menu"

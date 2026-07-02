@@ -43,7 +43,10 @@ export async function middleware(request: NextRequest) {
   ];
   const path = request.nextUrl.pathname;
   if (!user && PROTECTED.some((p) => path === p || path.startsWith(`${p}/`))) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    // Carry the destination so login can return the user to what they wanted.
+    const login = new URL("/login", request.url);
+    login.searchParams.set("next", path);
+    return NextResponse.redirect(login);
   }
 
   return response;
