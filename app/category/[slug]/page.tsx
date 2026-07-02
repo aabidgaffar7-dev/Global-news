@@ -43,7 +43,14 @@ export default async function CategoryPage({
 
   const stories = await getAllStories();
   const articles = storiesInCategory(stories, category);
-  const sources = [...new Set(articles.map((a) => a.source))];
+  // Top sources BY VOLUME, capped — an unbounded pill wall stops scanning
+  // well past ~10, and the corpus will only grow.
+  const sourceCounts = new Map<string, number>();
+  for (const a of articles)
+    sourceCounts.set(a.source, (sourceCounts.get(a.source) ?? 0) + 1);
+  const rankedSources = [...sourceCounts.entries()].sort((a, b) => b[1] - a[1]);
+  const topSources = rankedSources.slice(0, 10);
+  const moreSources = rankedSources.length - topSources.length;
 
   return (
     <div className="min-h-screen text-slate-200">
@@ -74,21 +81,27 @@ export default async function CategoryPage({
 
         <div className="mt-4 flex flex-wrap gap-5 text-sm text-slate-400">
           <span>📰 {articles.length} Articles</span>
-          <span>⭐ {sources.length} Sources</span>
+          <span>⭐ {rankedSources.length} Sources</span>
         </div>
 
-        {sources.length > 0 && (
+        {topSources.length > 0 && (
           <div className="mt-6">
             <h2 className="text-sm font-semibold text-slate-300">Top Sources</h2>
             <div className="mt-2 flex flex-wrap gap-2">
-              {sources.map((s) => (
-                <span
+              {topSources.map(([s, n]) => (
+                <Link
                   key={s}
-                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300"
+                  href={`/search?q=${encodeURIComponent(s)}`}
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 transition hover:border-cyan-400/40 hover:text-white"
                 >
-                  {s}
-                </span>
+                  {s} <span className="text-slate-500">· {n}</span>
+                </Link>
               ))}
+              {moreSources > 0 && (
+                <span className="rounded-full px-3 py-1 text-xs text-slate-500">
+                  +{moreSources} more
+                </span>
+              )}
             </div>
           </div>
         )}

@@ -120,17 +120,15 @@ html {
   animation: pulse-dot 1.8s ease-in-out infinite;
 }
 
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* Respect users who ask for less motion: the ticker becomes a static,
+   scrollable row and the pulse dots hold still. */
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
+  .pulse-dot {
+    animation: none;
+  }
 }
 
 ::-webkit-scrollbar {

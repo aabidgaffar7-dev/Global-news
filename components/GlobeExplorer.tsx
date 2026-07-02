@@ -13,7 +13,7 @@ import { formatCount, timeAgo } from "@/lib/format";
 const Globe = dynamic(() => import("react-globe.gl"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center text-sm text-sky-300/60">
+    <div className="flex h-full w-full items-center justify-center text-sm text-cyan-300/70">
       Spinning up the globe…
     </div>
   ),
@@ -67,7 +67,10 @@ export default function GlobeExplorer({
     const g = globeRef.current;
     if (!g) return;
     const c = g.controls();
-    c.autoRotate = !selected;
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    c.autoRotate = !selected && !reducedMotion;
     c.autoRotateSpeed = 0.4;
     c.enableZoom = true;
     c.zoomSpeed = 1.1;
@@ -207,7 +210,26 @@ function StoryPanel({
   location: GlobePoint;
   onClose: () => void;
 }) {
+  // Escape closes; page scroll locks while the panel is open.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.documentElement.style.overflow = "";
+    };
+  }, [onClose]);
+
   return (
+    <>
+    <div
+      className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+      onClick={onClose}
+      aria-hidden
+    />
     <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-white/10 bg-[#07060f]/95 shadow-2xl backdrop-blur-xl">
       <div className="flex items-start justify-between border-b border-white/10 p-5">
         <h2 className="flex items-center gap-2 text-xl font-medium text-white">
@@ -246,6 +268,7 @@ function StoryPanel({
         Ranked by reader interest · {location.sources.join(", ")}
       </div>
     </div>
+    </>
   );
 }
 

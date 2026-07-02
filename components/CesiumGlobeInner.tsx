@@ -162,7 +162,7 @@ export default function CesiumGlobeInner({
         className="relative h-[62vh] min-h-[440px] w-full overflow-hidden rounded-2xl border border-white/10 bg-[#05070f]"
       >
         {!ready && (
-          <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-sky-300/60">
+          <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-cyan-300/70">
             {error ? (
               <span className="text-rose-300/90">Globe error: {error}</span>
             ) : (

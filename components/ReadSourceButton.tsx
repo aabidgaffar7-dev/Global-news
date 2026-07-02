@@ -33,7 +33,7 @@ export default function ReadSourceButton({
       target="_blank"
       rel="noopener noreferrer"
       onClick={trackClick}
-      className="mt-4 inline-flex items-center gap-2 rounded-full bg-sky-500 px-6 py-3 font-semibold text-white transition hover:bg-sky-400"
+      className="mt-4 inline-flex items-center gap-2 aurora-bg rounded-full px-6 py-3 font-semibold text-[#07060f] transition hover:brightness-110"
     >
       Read the full article at {source} ↗
     </a>

@@ -108,7 +108,7 @@ export default async function HistoryPage() {
                         )}
                         <span>· read {timeAgo(r.viewed_at)}</span>
                         {external && (
-                          <span className="text-slate-600">· source ↗</span>
+                          <span className="text-slate-500">· source ↗</span>
                         )}
                       </div>
                     </div>

@@ -9,6 +9,8 @@ import type { Story } from "@/lib/news";
 
 // Articles arrive already score-sorted (Most Popular). The toggle re-sorts
 // client-side so readers can flip to chronological without a round-trip.
+const PAGE = 24;
+
 export default function CategoryArticles({
   articles,
   color,
@@ -19,11 +21,13 @@ export default function CategoryArticles({
   label: string;
 }) {
   const [sort, setSort] = useState<"popular" | "latest">("popular");
+  const [shown, setShown] = useState(PAGE);
   const sorted = [...articles].sort((a, b) =>
     sort === "latest"
       ? new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
       : b.score - a.score,
   );
+  const visible = sorted.slice(0, shown);
 
   return (
     <>
@@ -61,16 +65,28 @@ export default function CategoryArticles({
           soon.
         </p>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {sorted.map((story) => (
-            <ArticleCard
-              key={story.id}
-              story={story}
-              categoryColor={color}
-              categoryLabel={label}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {visible.map((story) => (
+              <ArticleCard
+                key={story.id}
+                story={story}
+                categoryColor={color}
+                categoryLabel={label}
+              />
+            ))}
+          </div>
+          {sorted.length > shown && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => setShown((n) => n + PAGE)}
+                className="rounded-full border border-white/15 px-5 py-2.5 text-sm text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/[0.04]"
+              >
+                Show more ({sorted.length - shown} remaining)
+              </button>
+            </div>
+          )}
+        </>
       )}
     </>
   );

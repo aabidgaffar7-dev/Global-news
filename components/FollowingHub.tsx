@@ -77,6 +77,13 @@ export default function FollowingHub({
   feed: AttributedStory[];
 }) {
   const router = useRouter();
+  // Coalesce rapid follow sprees into one server re-render instead of firing
+  // a full refresh per toggle.
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function refreshSoon() {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    refreshTimer.current = setTimeout(() => router.refresh(), 800);
+  }
   const [follows, setFollows] = useState<Follow[]>(initialFollows);
   const [keyword, setKeyword] = useState("");
   const [pending, setPending] = useState<Set<string>>(new Set());
@@ -121,7 +128,7 @@ export default function FollowingHub({
       next.delete(key);
       return next;
     });
-    router.refresh();
+    refreshSoon();
   }
 
   async function followMany(kind: string, values: string[]) {
@@ -136,7 +143,7 @@ export default function FollowingHub({
       setFollows((f) =>
         f.filter((x) => !(x.kind === kind && missing.includes(x.value))),
       );
-    router.refresh();
+    refreshSoon();
   }
 
   async function removeMany(kind: string, values: string[]) {
@@ -154,7 +161,7 @@ export default function FollowingHub({
       .in("value", values);
     if (error)
       setFollows((f) => [...f, ...present.map((v) => ({ kind, value: v }))]);
-    router.refresh();
+    refreshSoon();
   }
 
   async function addKeyword(e: React.FormEvent) {

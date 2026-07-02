@@ -30,7 +30,9 @@ export default async function AccountPage() {
     sb
       .from("reading_history")
       .select("source,category,viewed_at")
-      .eq("user_id", user.id),
+      .eq("user_id", user.id)
+      .order("viewed_at", { ascending: false })
+      .limit(1000),
     sb.from("follows").select("kind").eq("user_id", user.id),
     sb
       .from("saved")
@@ -61,9 +63,10 @@ export default async function AccountPage() {
   const SOURCE_LEAN = new Map(
     FEEDS.map((f) => [f.name, f.lean] as [string, Lean]),
   );
-  const readLeans = (history ?? [])
-    .map((h) => SOURCE_LEAN.get(h.source ?? ""))
-    .filter((l): l is Lean => Boolean(l));
+  // Broad-coverage reads count too — as "unrated", not silently dropped.
+  const readLeans: Lean[] = (history ?? []).map(
+    (h) => SOURCE_LEAN.get(h.source ?? "") ?? "unrated",
+  );
 
   const readDays = new Set(
     (history ?? [])
@@ -195,7 +198,7 @@ export default async function AccountPage() {
           </Link>
         </div>
 
-        <p className="mt-6 text-center text-xs text-slate-600">
+        <p className="mt-6 text-center text-xs text-slate-500">
           Your reading activity powers your For You feed and the global
           popularity ranking.
         </p>

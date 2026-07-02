@@ -61,14 +61,14 @@ export default function LoginForm() {
         <button
           type="button"
           onClick={() => setMode("signin")}
-          className={`flex-1 rounded-full py-1.5 transition ${mode === "signin" ? "bg-sky-500 text-white" : "text-slate-400"}`}
+          className={`flex-1 rounded-full py-1.5 transition ${mode === "signin" ? "aurora-bg text-[#07060f] font-medium" : "text-slate-400"}`}
         >
           Sign in
         </button>
         <button
           type="button"
           onClick={() => setMode("signup")}
-          className={`flex-1 rounded-full py-1.5 transition ${mode === "signup" ? "bg-sky-500 text-white" : "text-slate-400"}`}
+          className={`flex-1 rounded-full py-1.5 transition ${mode === "signup" ? "aurora-bg text-[#07060f] font-medium" : "text-slate-400"}`}
         >
           Create account
         </button>
@@ -80,7 +80,7 @@ export default function LoginForm() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="you@email.com"
-        className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-200 outline-none focus:border-sky-400/40"
+        className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-200 outline-none focus:border-cyan-400/40"
       />
       <input
         type="password"
@@ -89,7 +89,7 @@ export default function LoginForm() {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         placeholder="Password (6+ characters)"
-        className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-200 outline-none focus:border-sky-400/40"
+        className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-200 outline-none focus:border-cyan-400/40"
       />
 
       {error && <p className="text-sm text-rose-400">{error}</p>}

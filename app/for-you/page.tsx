@@ -16,10 +16,14 @@ export default async function ForYouPage() {
   if (!user) redirect("/login");
 
   const sb = await getServerSupabase();
+  // Recent reads are the interest signal (old stories aren't in the live feed
+  // anyway) — and the query stays bounded at power-user scale.
   const { data: historyRows } = await sb
     .from("reading_history")
     .select("link,category")
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .order("viewed_at", { ascending: false })
+    .limit(500);
   const history = historyRows ?? [];
 
   const readLinks = new Set(history.map((h) => h.link));
@@ -30,20 +34,57 @@ export default async function ForYouPage() {
   const interests = [...counts.entries()].sort((a, b) => b[1] - a[1]);
   const maxCount = interests[0]?.[1] ?? 0;
   const totalRead = history.length;
+  const hasInterests = interests.length > 0;
 
   const stories = await getAllStories();
-  const hasInterests = interests.length > 0;
-  const recommendations: Story[] = stories
-    .filter((s) => !readLinks.has(s.link))
-    .filter((s) => (hasInterests ? counts.has(s.category) : true))
-    .sort((a, b) => {
-      const ca = counts.get(a.category) ?? 0;
-      const cb = counts.get(b.category) ?? 0;
-      return cb - ca || b.score - a.score;
-    })
-    .slice(0, 9);
+  const unread = stories.filter((s) => !readLinks.has(s.link));
 
-  const confidence = totalRead === 0 ? 0 : Math.round((maxCount / totalRead) * 100);
+  // Interleave recommendations across the reader's top categories (round-
+  // robin, so one dominant interest can't monopolize all 9 slots), and
+  // reserve the last slot for a Discover pick from outside their usual reads.
+  let recommendations: { story: Story; discover: boolean }[];
+  if (!hasInterests) {
+    recommendations = unread
+      .slice(0, 9)
+      .map((story) => ({ story, discover: false }));
+  } else {
+    const byCat = new Map<string, Story[]>();
+    for (const s of unread) {
+      const list = byCat.get(s.category) ?? [];
+      list.push(s); // already score-sorted from getAllStories
+      byCat.set(s.category, list);
+    }
+    const top = interests
+      .map(([c]) => c)
+      .filter((c) => byCat.has(c))
+      .slice(0, 4);
+    const picks: Story[] = [];
+    const idx = new Map(top.map((c) => [c, 0] as [string, number]));
+    while (picks.length < 8) {
+      let took = false;
+      for (const c of top) {
+        const list = byCat.get(c)!;
+        const i = idx.get(c)!;
+        if (i < list.length && picks.length < 8) {
+          picks.push(list[i]);
+          idx.set(c, i + 1);
+          took = true;
+        }
+      }
+      if (!took) break;
+    }
+    recommendations = picks.map((story) => ({ story, discover: false }));
+    const discover = unread.find(
+      (s) => !counts.has(s.category) && !picks.includes(s),
+    );
+    if (discover) recommendations.push({ story: discover, discover: true });
+  }
+
+  // Honest metrics: profile strength = how much reading data we have (not a
+  // fake "AI confidence"); focus = share of reading in the top category.
+  const strength = Math.min(100, Math.round((totalRead / 30) * 100));
+  const focusPct =
+    totalRead === 0 ? 0 : Math.round((maxCount / totalRead) * 100);
   const topCat = interests[0]
     ? CATEGORY_META[interests[0][0] as Category]
     : null;
@@ -51,7 +92,7 @@ export default async function ForYouPage() {
     ? "New reader"
     : interests.length >= 4
       ? "Wide-ranging"
-      : confidence >= 55
+      : focusPct >= 55
         ? "Focused"
         : "Balanced";
 
@@ -87,16 +128,16 @@ export default async function ForYouPage() {
             <div className="mt-7 grid gap-4 sm:grid-cols-3">
               <InsightCard
                 icon="◎"
-                label="AI confidence"
-                value={`${confidence}%`}
-                sub="How well we know your taste"
+                label="Profile strength"
+                value={`${strength}%`}
+                sub="Grows with every article you read"
                 accent="#67e8f9"
               />
               <InsightCard
                 icon="📊"
                 label="Top interest"
                 value={topCat?.label ?? "—"}
-                sub={`${confidence}% of your reading`}
+                sub={`${focusPct}% of your reading`}
                 accent={topCat?.color ?? "#a78bfa"}
               />
               <InsightCard
@@ -141,16 +182,23 @@ export default async function ForYouPage() {
           )}
         </h2>
         <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {recommendations.map((story) => (
+          {recommendations.map(({ story, discover }) => (
             <RecCard
               key={story.id}
               story={story}
               matchPct={
-                maxCount > 0
-                  ? Math.round(((counts.get(story.category) ?? 0) / maxCount) * 100)
-                  : 0
+                discover || maxCount === 0
+                  ? 0
+                  : Math.min(
+                      95,
+                      Math.round(
+                        55 * ((counts.get(story.category) ?? 0) / maxCount) +
+                          40 * Math.min(1, story.score),
+                      ),
+                    )
               }
               readCount={counts.get(story.category) ?? 0}
+              discover={discover}
             />
           ))}
         </div>
@@ -224,10 +272,12 @@ function RecCard({
   story,
   matchPct,
   readCount,
+  discover = false,
 }: {
   story: Story;
   matchPct: number;
   readCount: number;
+  discover?: boolean;
 }) {
   const cat = CATEGORY_META[story.category];
   return (
@@ -238,14 +288,18 @@ function RecCard({
       <div className="relative h-36 w-full">
         <StoryImage src={story.imageUrl} className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#07060f]/85 to-transparent" />
-        {matchPct > 0 && (
+        {discover ? (
+          <span className="aurora-bg absolute left-3 top-3 rounded-full px-2 py-0.5 text-[11px] font-medium text-[#07060f]">
+            ✦ Discover
+          </span>
+        ) : matchPct > 0 ? (
           <span
             className="absolute left-3 top-3 rounded-full px-2 py-0.5 text-[11px] font-medium text-[#07060f]"
             style={{ background: "linear-gradient(90deg,#fbbf24,#f59e0b)" }}
           >
             ✦ {matchPct}% match
           </span>
-        )}
+        ) : null}
         <span
           className="absolute right-3 top-3 rounded-full px-2 py-0.5 text-[11px] font-medium"
           style={{ color: cat.color, background: "rgba(7,6,15,0.6)" }}
@@ -257,11 +311,13 @@ function RecCard({
         <h3 className="font-display line-clamp-2 font-medium text-[#ece8e1] group-hover:text-white">
           {story.title}
         </h3>
-        <div className="mt-2 rounded-lg border border-amber-400/15 bg-amber-400/[0.05] p-2 text-[11px] text-amber-200/80">
-          <span className="font-medium">Why:</span>{" "}
-          {readCount > 0
-            ? `interest in ${cat.label} (${readCount} read)`
-            : "trending globally"}
+        <div className="mt-2 rounded-lg border border-white/10 bg-white/[0.03] p-2 text-[11px] text-slate-400">
+          <span className="font-medium text-cyan-300">Why:</span>{" "}
+          {discover
+            ? "broadening your mix — something outside your usual reads"
+            : readCount > 0
+              ? `interest in ${cat.label} (${readCount} read)`
+              : "trending globally"}
         </div>
         <div className="mt-2 text-[11px] text-slate-500">
           {story.source} ·{" "}

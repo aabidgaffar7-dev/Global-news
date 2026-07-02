@@ -9,7 +9,7 @@ const Inner = dynamic(() => import("@/components/CesiumGlobeInner"), {
   ssr: false,
   loading: () => (
     <div className="relative h-[62vh] min-h-[440px] w-full overflow-hidden rounded-2xl border border-white/10 bg-[#05070f]">
-      <div className="absolute inset-0 flex items-center justify-center text-sm text-sky-300/60">
+      <div className="absolute inset-0 flex items-center justify-center text-sm text-cyan-300/70">
         Loading satellite Earth…
       </div>
     </div>

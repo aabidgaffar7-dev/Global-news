@@ -37,7 +37,7 @@ export default function SiteFooter() {
             ))}
           </nav>
         </div>
-        <div className="mt-8 border-t border-white/5 pt-5 text-xs text-slate-600">
+        <div className="mt-8 border-t border-white/5 pt-5 text-xs text-slate-500">
           © GlobeNews · Neutral by design — the crowd decides what rises.
         </div>
       </div>

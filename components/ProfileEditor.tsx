@@ -43,7 +43,7 @@ export default function ProfileEditor({
             setName(e.target.value);
             setSaved(false);
           }}
-          className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-slate-200 outline-none focus:border-sky-400/40"
+          className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-slate-200 outline-none focus:border-cyan-400/40"
         />
       </div>
       <div>
@@ -56,7 +56,7 @@ export default function ProfileEditor({
           }}
           rows={2}
           placeholder="Tech enthusiast and global news follower…"
-          className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-slate-200 outline-none focus:border-sky-400/40"
+          className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-slate-200 outline-none focus:border-cyan-400/40"
         />
       </div>
       <div className="flex items-center gap-3">

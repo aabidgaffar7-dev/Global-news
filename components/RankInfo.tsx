@@ -29,7 +29,7 @@ export default function RankInfo() {
         ⓘ How it&apos;s ranked
       </button>
       {open && (
-        <div className="absolute left-1/2 top-9 z-50 w-72 -translate-x-1/2 rounded-2xl border border-white/10 bg-[#0b0a16]/95 p-4 text-left text-xs leading-relaxed text-slate-300 shadow-2xl backdrop-blur-xl">
+        <div className="absolute left-0 top-9 z-50 w-[min(18rem,calc(100vw-2.5rem))] rounded-2xl border border-white/10 bg-[#0b0a16]/95 p-4 text-left text-xs leading-relaxed text-slate-300 shadow-2xl backdrop-blur-xl sm:left-1/2 sm:-translate-x-1/2">
           <p className="font-medium text-slate-100">No editor picks these.</p>
           <p className="mt-2">Order comes from a blend of:</p>
           <ul className="mt-1.5 space-y-1">

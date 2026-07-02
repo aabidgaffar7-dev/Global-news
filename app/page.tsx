@@ -234,7 +234,7 @@ function CategoryCard({
 
       <ul className="mt-3 flex-1 space-y-2">
         {preview.length === 0 && (
-          <li className="text-xs text-slate-600">No stories right now.</li>
+          <li className="text-xs text-slate-500">No stories right now.</li>
         )}
         {preview.map((story) => (
           <li key={story.id}>
