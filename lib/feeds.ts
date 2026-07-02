@@ -218,6 +218,18 @@ export const FEEDS: Feed[] = [
   },
 ];
 
+// Canonical display order for the spectrum — one source of truth (was
+// duplicated, with diverging contents, in four components).
+export const LEAN_ORDER: Lean[] = [
+  "left",
+  "center-left",
+  "center",
+  "center-right",
+  "right",
+  "intl",
+  "unrated",
+];
+
 export const LEAN_META: Record<Lean, { label: string; color: string }> = {
   left: { label: "Left", color: "#60a5fa" },
   "center-left": { label: "Center-left", color: "#7dd3fc" },

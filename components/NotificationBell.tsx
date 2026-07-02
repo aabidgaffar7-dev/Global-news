@@ -11,6 +11,7 @@ type Item = {
   source: string;
   lean: Lean;
   publishedAt: string;
+  match?: string; // present when this story matches one of the user's follows
 };
 
 const SEEN_KEY = "gn_last_seen";
@@ -116,7 +117,12 @@ export default function NotificationBell() {
                       <span className="line-clamp-2 text-sm text-slate-200">
                         {s.title}
                       </span>
-                      <span className="text-[11px] text-slate-500">
+                      <span className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
+                        {s.match && (
+                          <span className="rounded-full bg-cyan-400/10 px-1.5 py-px font-medium text-cyan-300">
+                            {s.match}
+                          </span>
+                        )}
                         {s.source} · {timeAgo(s.publishedAt)}
                       </span>
                     </span>

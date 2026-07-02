@@ -3,6 +3,8 @@ import SiteHeader from "@/components/SiteHeader";
 import StoryImage from "@/components/StoryImage";
 import RankInfo from "@/components/RankInfo";
 import { getAllStories, type Story } from "@/lib/news";
+import { getWindowPopularity } from "@/lib/engagement";
+import { normalizeUrl } from "@/lib/url";
 import {
   CATEGORY_META,
   DISPLAY_CATEGORIES,
@@ -40,6 +42,15 @@ export default async function PopularPage({
 
   const all = await getAllStories();
   const now = Date.now();
+
+  // Windowed views rank by engagement WITHIN the window when that data
+  // exists (story_engagement_daily), falling back to the overall score.
+  const winPop =
+    win.hours === Infinity
+      ? new Map<string, number>()
+      : await getWindowPopularity(Math.max(1, Math.round(win.hours / 24)));
+  const wp = (s: Story) => winPop.get(normalizeUrl(s.link)) ?? 0;
+
   const filtered = all
     .filter((s) => (activeCat ? s.category === activeCat : true))
     .filter(
@@ -47,6 +58,7 @@ export default async function PopularPage({
         win.hours === Infinity ||
         (now - new Date(s.publishedAt).getTime()) / 3_600_000 <= win.hours,
     )
+    .sort((a, b) => wp(b) - wp(a) || b.score - a.score)
     .slice(0, 40);
 
   // Build a URL keeping the other filter intact.

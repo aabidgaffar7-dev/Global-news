@@ -6,7 +6,7 @@ import type { ComponentType } from "react";
 import Link from "next/link";
 import StoryImage from "@/components/StoryImage";
 import type { GlobePoint, Story } from "@/lib/news";
-import { LEAN_META, type Lean } from "@/lib/feeds";
+import { LEAN_META, LEAN_ORDER } from "@/lib/feeds";
 import { formatCount, timeAgo } from "@/lib/format";
 
 // react-globe.gl touches `window`/WebGL, so it must never render on the server.
@@ -30,15 +30,7 @@ function hexA(hex: string, a: number): string {
   return `${hex}${n}`;
 }
 
-const LEAN_LEGEND: Lean[] = [
-  "left",
-  "center-left",
-  "center",
-  "center-right",
-  "right",
-  "intl",
-  "unrated",
-];
+const LEAN_LEGEND = LEAN_ORDER;
 
 export default function GlobeExplorer({
   locations,

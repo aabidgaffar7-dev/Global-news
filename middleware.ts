@@ -40,6 +40,7 @@ export async function middleware(request: NextRequest) {
     "/for-you",
     "/saved",
     "/history",
+    "/welcome",
   ];
   const path = request.nextUrl.pathname;
   if (!user && PROTECTED.some((p) => path === p || path.startsWith(`${p}/`))) {

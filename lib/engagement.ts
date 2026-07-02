@@ -27,6 +27,36 @@ export async function recordEngagement(
   }
 }
 
+// Engagement WITHIN a window (last N days), keyed by normalized link — powers
+// honest "most read today / this week" rankings. Empty map until the
+// story_engagement_daily table exists (graceful fallback to score order).
+export async function getWindowPopularity(
+  days: number,
+): Promise<Map<string, number>> {
+  const map = new Map<string, number>();
+  const sb = getSupabase();
+  if (!sb) return map;
+  try {
+    const since = new Date(Date.now() - days * 24 * 3_600_000)
+      .toISOString()
+      .slice(0, 10);
+    const { data } = await sb
+      .from("story_engagement_daily")
+      .select("link,views,clicks")
+      .gte("day", since)
+      .limit(5000);
+    for (const row of data ?? []) {
+      const key = normalizeUrl(row.link as string);
+      const weight =
+        ((row.views as number) ?? 0) + ((row.clicks as number) ?? 0) * 3;
+      map.set(key, (map.get(key) ?? 0) + weight);
+    }
+  } catch {
+    // table not created yet → callers fall back to score order
+  }
+  return map;
+}
+
 // Engagement counts keyed by NORMALIZED article link, for blending into the
 // ranking. Bounded to the recent window: links older than the live feed can
 // never match a live story, and an unbounded select would silently truncate

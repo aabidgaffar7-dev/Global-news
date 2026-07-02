@@ -4,6 +4,7 @@ import { categorize, type Category } from "./categories";
 import { getPopularity } from "./engagement";
 import { CITIES, geolocate } from "./cities";
 import { fetchBroadNews } from "./newsdata";
+import { persistStories } from "./store";
 import {
   safeHttpUrl,
   normalizeUrl,
@@ -210,7 +211,12 @@ export async function getAllStories(): Promise<Story[]> {
 
   // Only refresh the cache when we actually got stories; otherwise keep the
   // last good set so a transient network blip doesn't empty the page.
-  if (deduped.length > 0) cache = { at: Date.now(), stories: deduped };
+  if (deduped.length > 0) {
+    cache = { at: Date.now(), stories: deduped };
+    // Persist so article links outlive the feed (runs once per refresh —
+    // best-effort, no-op until the `stories` table exists).
+    await persistStories(deduped);
+  }
   return cache?.stories ?? deduped;
 }
 

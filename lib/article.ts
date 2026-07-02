@@ -5,6 +5,7 @@ import { extract } from "@extractus/article-extractor";
 import { getAllStories, type Story } from "./news";
 import { CATEGORY_META, type Category } from "./categories";
 import { safeHttpUrl } from "./url";
+import { getStoredStory } from "./store";
 
 // Default model per Anthropic guidance. NOTE: this runs once per article on first
 // view. For high volume, "claude-haiku-4-5" is ~5x cheaper input / ~5x output.
@@ -69,9 +70,13 @@ export function decodeWebStory(id: string): Story | undefined {
   }
 }
 
-// Resolve an article id to a story — RSS (cached set) or a web result (encoded id).
+// Resolve an article id: the live feed first, then encoded web ids, then the
+// persistent store — so saved/shared article links keep working after the
+// story rotates out of the feed.
 export async function resolveStory(id: string): Promise<Story | undefined> {
-  return (await getStoryById(id)) ?? decodeWebStory(id);
+  return (
+    (await getStoryById(id)) ?? decodeWebStory(id) ?? (await getStoredStory(id))
+  );
 }
 
 const SummarySchema = z.object({

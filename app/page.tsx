@@ -3,6 +3,7 @@ import SiteHeader from "@/components/SiteHeader";
 import TrendingTicker from "@/components/TrendingTicker";
 import TrendingLeanBar from "@/components/TrendingLeanBar";
 import OnboardingStrip from "@/components/OnboardingStrip";
+import YourWireStrip from "@/components/YourWireStrip";
 import RankInfo from "@/components/RankInfo";
 import GlobeExplorer from "@/components/GlobeExplorer";
 import StoryImage from "@/components/StoryImage";
@@ -34,6 +35,7 @@ export default async function Home() {
 
       <main className="mx-auto max-w-6xl px-5 pb-24">
         <OnboardingStrip />
+        <YourWireStrip />
 
         {/* Hero */}
         <section className="py-9 text-center sm:py-12">
@@ -52,9 +54,20 @@ export default async function Home() {
             action="/search"
             className="mx-auto mt-9 flex max-w-2xl items-center gap-3 rounded-full border border-white/[0.12] bg-white/[0.03] px-5 py-3.5 backdrop-blur transition focus-within:border-cyan-400/40"
           >
-            <span className="text-slate-500" aria-hidden>
-              🔍
-            </span>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              className="shrink-0 text-slate-500"
+              aria-hidden
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
             <input
               type="text"
               name="q"

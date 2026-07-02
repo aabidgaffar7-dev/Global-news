@@ -1,14 +1,4 @@
-import { LEAN_META, type Lean } from "@/lib/feeds";
-
-const ORDER: Lean[] = [
-  "left",
-  "center-left",
-  "center",
-  "center-right",
-  "right",
-  "intl",
-  "unrated",
-];
+import { LEAN_META, LEAN_ORDER as ORDER, type Lean } from "@/lib/feeds";
 
 // The political-lean spread of what's currently trending — the neutrality
 // mission, quantified honestly from real data (no fabricated score).

@@ -51,7 +51,9 @@ export default function LoginForm() {
       if (error) return setError(error.message);
     }
 
-    router.push(next);
+    // Brand-new accounts get the 30-second newsroom setup; returning users go
+    // back to what they wanted.
+    router.push(mode === "signup" ? "/welcome" : next);
     router.refresh();
   }
 

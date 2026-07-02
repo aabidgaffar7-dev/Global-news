@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getBrowserSupabase } from "@/lib/supabase-browser";
-import { LEAN_META, type Lean } from "@/lib/feeds";
+import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
 import { storyPlace, timeAgo } from "@/lib/format";
 
 type Follow = { kind: string; value: string };
@@ -47,15 +47,6 @@ export type AttributedStory = {
   publishedAt: string;
   match: Match;
 };
-
-const LEAN_ORDER: Lean[] = [
-  "left",
-  "center-left",
-  "center",
-  "center-right",
-  "right",
-  "intl",
-];
 
 // Collapsed previews so these (growing) lists don't dominate the page.
 const SOURCE_PREVIEW = 6;
@@ -666,7 +657,7 @@ function SourceTile({
             {followed && <span className="text-xs text-cyan-400">✓</span>}
           </h3>
           <p className="mt-0.5 text-xs text-slate-400">
-            📍 {s.city} · {s.country}
+            {s.city ? `📍 ${s.city} · ${s.country}` : s.country}
           </p>
         </div>
         <span

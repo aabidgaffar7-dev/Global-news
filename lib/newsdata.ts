@@ -86,12 +86,15 @@ function toStory(a: NewsDataArticle, index: number): Story | null {
   const publishedAt = stablePublishedAt(a.pubDate, link);
   const base = score(publishedAt, index);
 
+  const sourceName = a.source_name?.trim() || a.source_id || "Web";
   return {
     id: hashId(`nd:${link}`),
     title,
     link,
-    source: a.source_name?.trim() || a.source_id || "Web",
-    sourceId: "newsdata",
+    source: sourceName,
+    // Per-outlet id so readers can FOLLOW broad-coverage outlets (matching
+    // works in the Following wire like any curated source).
+    sourceId: `nd:${a.source_id ?? sourceName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
     lean: "unrated", // honest: these outlets aren't editorially rated
     category: toCategory(a.category, title, summary),
     summary,

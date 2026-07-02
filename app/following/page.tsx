@@ -52,15 +52,48 @@ export default async function FollowingPage() {
     locationCountry.set(s.city, s.country);
   }
 
-  // Sources come from the full roster (a 0-story outlet must still be followable).
-  const sources = FEEDS.map((f) => ({
-    id: f.id,
-    name: f.name,
-    city: f.city,
-    country: f.country,
-    lean: f.lean,
-    count: sourceCount.get(f.id) ?? 0,
-  }));
+  // Sources: the full curated roster (a 0-story outlet must still be
+  // followable) PLUS every broad-coverage outlet in the current feed — so
+  // readers can follow the outlets they actually read, not just our 19.
+  const broadOutlets = new Map<string, { name: string; count: number }>();
+  for (const s of stories) {
+    if (!s.sourceId.startsWith("nd:")) continue;
+    const entry = broadOutlets.get(s.sourceId) ?? { name: s.source, count: 0 };
+    entry.count++;
+    broadOutlets.set(s.sourceId, entry);
+  }
+  const sources = [
+    ...FEEDS.map((f) => ({
+      id: f.id,
+      name: f.name,
+      city: f.city,
+      country: f.country,
+      lean: f.lean,
+      count: sourceCount.get(f.id) ?? 0,
+    })),
+    ...[...broadOutlets.entries()]
+      .sort((a, b) => b[1].count - a[1].count)
+      .map(([id, e]) => ({
+        id,
+        name: e.name,
+        city: "",
+        country: "Broad coverage",
+        lean: "unrated" as const,
+        count: e.count,
+      })),
+    // Outlets the user follows that aren't in the current feed still need a
+    // card (so they can see + unfollow them).
+    ...[...followedSources]
+      .filter((id) => id.startsWith("nd:") && !broadOutlets.has(id))
+      .map((id) => ({
+        id,
+        name: id.slice(3).replace(/-/g, " "),
+        city: "",
+        country: "Broad coverage",
+        lean: "unrated" as const,
+        count: 0,
+      })),
+  ];
 
   const topics = DISPLAY_CATEGORIES.map((slug) => ({
     slug,

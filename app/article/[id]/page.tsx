@@ -5,8 +5,8 @@ import ReadSourceButton from "@/components/ReadSourceButton";
 import ShareButton from "@/components/ShareButton";
 import SaveButton from "@/components/SaveButton";
 import StoryImage from "@/components/StoryImage";
+import ViewPing from "@/components/ViewPing";
 import { resolveStory, summarizeStory } from "@/lib/article";
-import { recordEngagement } from "@/lib/engagement";
 import { getAllStories, type Story } from "@/lib/news";
 import { getUser, getServerSupabase } from "@/lib/supabase-server";
 import { LEAN_META } from "@/lib/feeds";
@@ -83,9 +83,6 @@ export default async function ArticlePage({
     );
   }
 
-  // Record a view (no-op without Supabase) — feeds the popularity ranking.
-  await recordEngagement(story.link, story.title, story.source, "view");
-
   // If signed in, log to reading history (powers For You). Unique on
   // (user_id, link), so re-reads don't inflate counts.
   const user = await getUser();
@@ -150,6 +147,8 @@ export default async function ArticlePage({
   return (
     <div className="min-h-screen text-slate-200">
       <SiteHeader />
+      {/* One view per session, crawler-filtered — feeds the popularity engine */}
+      <ViewPing link={story.link} title={story.title} source={story.source} />
       <main className="mx-auto max-w-3xl px-5 pb-24 pt-8">
         <div className="flex items-center justify-between gap-3">
           <Link

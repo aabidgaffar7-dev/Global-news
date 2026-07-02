@@ -1,23 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
-import { LEAN_META, FEEDS, type Lean } from "@/lib/feeds";
+import { LEAN_META, LEAN_ORDER, FEEDS } from "@/lib/feeds";
 
 export const metadata: Metadata = {
   title: "About & Methodology",
   description:
     "How GlobeNews works: stories ranked by what readers actually open, sources labelled by political lean, and neutral AI summaries that link to the original.",
 };
-
-const LEAN_ORDER: Lean[] = [
-  "left",
-  "center-left",
-  "center",
-  "center-right",
-  "right",
-  "intl",
-  "unrated",
-];
 
 const PRINCIPLES = [
   {
