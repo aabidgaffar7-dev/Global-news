@@ -8,6 +8,8 @@ import { timeAgo } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "Saved for later" };
+
 type SavedRow = {
   story_id: string | null;
   link: string;

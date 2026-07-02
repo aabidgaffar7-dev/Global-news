@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getBrowserSupabase } from "@/lib/supabase-browser";
 import { LEAN_META, type Lean } from "@/lib/feeds";
-import { timeAgo } from "@/lib/format";
+import { storyPlace, timeAgo } from "@/lib/format";
 
 type Follow = { kind: string; value: string };
 
@@ -42,6 +42,8 @@ export type AttributedStory = {
   categoryColor: string;
   categoryEmoji: string;
   city: string;
+  country?: string;
+  placement: "city" | "country" | "source";
   publishedAt: string;
   match: Match;
 };
@@ -783,6 +785,11 @@ function LocationTile({
 function WireRow({ story }: { story: AttributedStory }) {
   const lean = LEAN_META[story.lean];
   const m = story.match;
+  const place = storyPlace({
+    placement: story.placement,
+    city: story.city,
+    country: story.country ?? "",
+  });
   return (
     <li>
       <Link
@@ -806,7 +813,7 @@ function WireRow({ story }: { story: AttributedStory }) {
           <span className="font-medium text-slate-300">{story.source}</span>
           <span style={{ color: lean.color }}>· {lean.label}</span>
           <span className="text-slate-500">
-            · 📍 {story.city} · {timeAgo(story.publishedAt)}
+            {place ? `· 📍 ${place} ` : ""}· {timeAgo(story.publishedAt)}
           </span>
         </div>
         <h3 className="font-display font-medium text-[#ece8e1] group-hover:text-white">

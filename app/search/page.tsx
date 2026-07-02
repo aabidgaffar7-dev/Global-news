@@ -6,6 +6,12 @@ import { searchWeb, gnewsEnabled } from "@/lib/gnews";
 
 export const revalidate = 600;
 
+export const metadata = {
+  title: "Search",
+  description:
+    "Search locations, sources, and articles across curated feeds and the wider web.",
+};
+
 export default async function SearchPage({
   searchParams,
 }: {

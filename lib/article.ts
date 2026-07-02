@@ -3,6 +3,8 @@ import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { extract } from "@extractus/article-extractor";
 import { getAllStories, type Story } from "./news";
+import { CATEGORY_META, type Category } from "./categories";
+import { safeHttpUrl } from "./url";
 
 // Default model per Anthropic guidance. NOTE: this runs once per article on first
 // view. For high volume, "claude-haiku-4-5" is ~5x cheaper input / ~5x output.
@@ -24,30 +26,44 @@ export async function getStoryById(id: string): Promise<Story | undefined> {
 
 // Web (GNews) results carry their data packed into the id, so the article page
 // can summarize them without a server-side store. See encodeWebId in lib/gnews.ts.
+// Ids arrive from the URL bar, i.e. attacker-controlled — validate every field
+// before it reaches rendering, summarization, or engagement recording.
 export function decodeWebStory(id: string): Story | undefined {
-  if (!id.startsWith("web_")) return undefined;
+  if (!id.startsWith("web_") || id.length > 4096) return undefined;
   try {
     const p = JSON.parse(
       Buffer.from(id.slice(4), "base64url").toString("utf8"),
     );
-    if (!p.u || !p.t) return undefined;
+    const link = safeHttpUrl(typeof p.u === "string" ? p.u : undefined);
+    const title = typeof p.t === "string" ? p.t.slice(0, 300) : "";
+    if (!link || !title) return undefined;
+    const category: Category =
+      typeof p.c === "string" && p.c in CATEGORY_META
+        ? (p.c as Category)
+        : "world";
+    const publishedAt =
+      typeof p.p === "string" && !Number.isNaN(new Date(p.p).getTime())
+        ? new Date(p.p).toISOString()
+        : new Date().toISOString();
     return {
       id,
-      title: p.t,
-      link: p.u,
-      source: p.s ?? "Web",
+      title,
+      link,
+      source: typeof p.s === "string" ? p.s.slice(0, 120) : "Web",
       sourceId: "gnews",
-      lean: "intl",
-      category: p.c ?? "world",
-      summary: p.d,
-      imageUrl: p.i,
-      publishedAt: p.p ?? new Date().toISOString(),
+      lean: "unrated",
+      category,
+      summary: typeof p.d === "string" ? p.d.slice(0, 300) : undefined,
+      imageUrl: safeHttpUrl(typeof p.i === "string" ? p.i : undefined),
+      publishedAt,
       lat: 0,
       lng: 0,
       city: "",
       country: "",
+      placement: "source",
+      baseScore: 0,
       score: 0,
-    } as Story;
+    } satisfies Story;
   } catch {
     return undefined;
   }

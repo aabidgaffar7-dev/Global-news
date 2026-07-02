@@ -4,6 +4,20 @@ export function formatCount(n: number): string {
   return `${n}`;
 }
 
+// What a surface may honestly SAY about a story's location, based on how the
+// coords were derived. 'city' → the detected city; 'country' → country only;
+// 'source' (outlet HQ) → nothing: never present the outlet's home as the
+// story's location.
+export function storyPlace(s: {
+  placement: "city" | "country" | "source";
+  city: string;
+  country: string;
+}): string | null {
+  if (s.placement === "city") return s.city;
+  if (s.placement === "country") return s.country;
+  return null;
+}
+
 export function timeAgo(iso: string): string {
   const t = new Date(iso).getTime();
   if (Number.isNaN(t)) return "";

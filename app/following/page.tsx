@@ -12,6 +12,8 @@ import { FEEDS } from "@/lib/feeds";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "Your Newsroom" };
+
 export default async function FollowingPage() {
   const user = await getUser();
   if (!user) redirect("/login");
@@ -76,13 +78,26 @@ export default async function FollowingPage() {
     count: locationCount.get(city) ?? 0,
   }));
 
+  // Keyword follows match on word boundaries — plain substring floods the
+  // wire with false positives for short terms ("ai" inside "said").
+  const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const keywordRes = followedKeywords.map((k) => ({
+    k,
+    re: new RegExp(`\\b${escapeRe(k)}\\b`, "i"),
+  }));
+
+  // A location follow only matches stories actually ABOUT that city — not
+  // stories whose coords fell back to an outlet HQ there.
+  const locationMatch = (s: (typeof stories)[number]) =>
+    s.placement === "city" && followedLocations.has(s.city);
+
   // The Live Wire: any story matching any follow, with why-followed attribution.
   function attribute(s: (typeof stories)[number]): Match {
     if (followedSources.has(s.sourceId))
       return { kind: "source", label: s.source, color: "#22d3ee" };
-    const hay = `${s.title} ${s.summary ?? ""}`.toLowerCase();
-    const kw = followedKeywords.find((k) => hay.includes(k));
-    if (kw) return { kind: "keyword", label: `#${kw}`, color: "#22d3ee" };
+    const hay = `${s.title} ${s.summary ?? ""}`;
+    const kw = keywordRes.find((x) => x.re.test(hay));
+    if (kw) return { kind: "keyword", label: `#${kw.k}`, color: "#22d3ee" };
     if (followedCategories.has(s.category)) {
       const m = CATEGORY_META[s.category];
       return { kind: "category", label: m.label, color: m.color, emoji: m.emoji };
@@ -94,10 +109,15 @@ export default async function FollowingPage() {
     .filter((s) => {
       if (followedSources.has(s.sourceId)) return true;
       if (followedCategories.has(s.category)) return true;
-      if (followedLocations.has(s.city)) return true;
-      const hay = `${s.title} ${s.summary ?? ""}`.toLowerCase();
-      return followedKeywords.some((k) => hay.includes(k));
+      if (locationMatch(s)) return true;
+      const hay = `${s.title} ${s.summary ?? ""}`;
+      return keywordRes.some((x) => x.re.test(hay));
     })
+    // A wire reads newest-first (the score-sort is for leaderboards).
+    .sort(
+      (a, b) =>
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+    )
     .slice(0, 30)
     .map((s) => {
       const cat = CATEGORY_META[s.category];
@@ -111,6 +131,7 @@ export default async function FollowingPage() {
         categoryColor: cat.color,
         categoryEmoji: cat.emoji,
         city: s.city,
+        placement: s.placement,
         publishedAt: s.publishedAt,
         match: attribute(s),
       };

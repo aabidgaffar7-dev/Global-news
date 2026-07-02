@@ -16,6 +16,7 @@ const LEAN_ORDER: Lean[] = [
   "center-right",
   "right",
   "intl",
+  "unrated",
 ];
 
 const PRINCIPLES = [
@@ -36,8 +37,8 @@ const PRINCIPLES = [
   },
   {
     icon: "🌍",
-    title: "A deliberately balanced roster",
-    body: `Our ${FEEDS.length} curated outlets are spread across the globe and the spectrum — from London to Doha, Tokyo to Johannesburg — so the popularity contest happens on a level, international field.`,
+    title: "A globally spread roster",
+    body: `Our ${FEEDS.length} hand-rated outlets span the globe — from London to Doha, Tokyo to Johannesburg — and thousands more sources flow in through broad coverage. Hand-rating outlets for lean is careful editorial work; sources we haven't assessed yet wear an honest "Unrated" tag rather than a guessed label.`,
   },
 ];
 
@@ -96,7 +97,8 @@ export default function AboutPage() {
           <p className="mt-1.5 text-sm text-slate-400">
             You&apos;ll see one of these on every source. They describe the
             outlet&apos;s typical vantage point — an estimate to read with, not a
-            verdict.
+            verdict. &quot;Unrated&quot; means we haven&apos;t hand-assessed that
+            outlet yet — we&apos;d rather say so than guess.
           </p>
           <div className="mt-4 flex flex-wrap gap-2.5">
             {LEAN_ORDER.map((lean) => (

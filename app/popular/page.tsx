@@ -9,14 +9,22 @@ import {
   type Category,
 } from "@/lib/categories";
 import { LEAN_META } from "@/lib/feeds";
-import { formatCount, timeAgo } from "@/lib/format";
+import { formatCount, storyPlace, timeAgo } from "@/lib/format";
 
 export const revalidate = 600;
 
+export const metadata = {
+  title: "Most Popular",
+  description:
+    "The full trending leaderboard — world news ranked by what readers actually open, filterable by topic and time.",
+};
+
+// Windows filter by PUBLISH date (labels say so — "most read today" would
+// need per-day engagement history we don't collect yet).
 const WINDOWS = [
-  { key: "all", label: "All time", hours: Infinity },
-  { key: "week", label: "This week", hours: 24 * 7 },
-  { key: "today", label: "Today", hours: 24 },
+  { key: "all", label: "Live feed", hours: Infinity },
+  { key: "week", label: "Published this week", hours: 24 * 7 },
+  { key: "today", label: "Published today", hours: 24 },
 ] as const;
 
 export default async function PopularPage({
@@ -202,7 +210,7 @@ function RankRow({ story, rank }: { story: Story; rank: number }) {
             </span>
             <span className="font-medium text-slate-300">{story.source}</span>
             <span style={{ color: lean.color }}>· {lean.label}</span>
-            <span>· 📍 {story.city}</span>
+            {storyPlace(story) && <span>· 📍 {storyPlace(story)}</span>}
             <span>· {timeAgo(story.publishedAt)}</span>
           </div>
         </div>

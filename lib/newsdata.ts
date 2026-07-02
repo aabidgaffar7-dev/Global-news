@@ -5,6 +5,7 @@
 // without NEWSDATA_API_KEY.
 import { categorize, type Category } from "./categories";
 import { geolocate, cityForCountry } from "./cities";
+import { safeHttpUrl, truncate, stablePublishedAt } from "./url";
 import type { Story } from "./news";
 
 type NewsDataArticle = {
@@ -25,7 +26,7 @@ const API = "https://newsdata.io/api/1/latest";
 const QUERIES = [
   "language=en&removeduplicate=1", // global top
   "language=en&country=us&removeduplicate=1", // US incl. local/regional
-  "language=en&category=business,technology,sports,entertainment,health", // topical breadth
+  "language=en&category=business,technology,sports,entertainment,health&removeduplicate=1", // topical breadth
 ];
 
 // NewsData's taxonomy → ours ("top"/"other"/etc. fall through to categorize()).
@@ -49,22 +50,16 @@ function hashId(s: string): string {
   return (h >>> 0).toString(36);
 }
 
-function safeHttpUrl(url: string | undefined | null): string | undefined {
-  if (!url) return undefined;
-  try {
-    const proto = new URL(url).protocol;
-    return proto === "http:" || proto === "https:" ? url : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function toCategory(cats: string[] | undefined, text: string): Category {
+function toCategory(
+  cats: string[] | undefined,
+  title: string,
+  summary?: string,
+): Category {
   for (const c of cats ?? []) {
     const mapped = CATEGORY_MAP[c.toLowerCase()];
     if (mapped) return mapped;
   }
-  return categorize(text);
+  return categorize(title, summary);
 }
 
 function score(publishedAt: string, index: number): number {
@@ -78,17 +73,18 @@ function toStory(a: NewsDataArticle, index: number): Story | null {
   const title = a.title?.trim();
   if (!link || !title) return null;
 
-  const summary = a.description?.trim().slice(0, 220);
+  const summary = truncate(a.description);
   const text = `${title} ${summary ?? ""}`;
 
   // Place the story: the city its text names, else its country's hub city.
-  const place = geolocate(text) ?? cityForCountry(a.country?.[0] ?? "");
+  // Provenance is recorded so surfaces never claim a hub city as the story's
+  // actual location when we only know the country.
+  const cityHit = geolocate(text);
+  const place = cityHit ?? cityForCountry(a.country?.[0] ?? "");
   if (!place) return null; // can't put it on the globe — skip (bounded loss)
 
-  const parsed = new Date(a.pubDate ?? "");
-  const publishedAt = Number.isNaN(parsed.getTime())
-    ? new Date().toISOString()
-    : parsed.toISOString();
+  const publishedAt = stablePublishedAt(a.pubDate, link);
+  const base = score(publishedAt, index);
 
   return {
     id: hashId(`nd:${link}`),
@@ -97,7 +93,7 @@ function toStory(a: NewsDataArticle, index: number): Story | null {
     source: a.source_name?.trim() || a.source_id || "Web",
     sourceId: "newsdata",
     lean: "unrated", // honest: these outlets aren't editorially rated
-    category: toCategory(a.category, text),
+    category: toCategory(a.category, title, summary),
     summary,
     imageUrl: safeHttpUrl(a.image_url),
     publishedAt,
@@ -105,7 +101,9 @@ function toStory(a: NewsDataArticle, index: number): Story | null {
     lng: place.lng,
     city: place.name,
     country: place.country,
-    score: score(publishedAt, index),
+    placement: cityHit ? "city" : "country",
+    baseScore: base,
+    score: base,
   };
 }
 

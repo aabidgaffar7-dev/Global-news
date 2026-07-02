@@ -11,7 +11,7 @@ import { getAllStories, type Story } from "@/lib/news";
 import { getUser, getServerSupabase } from "@/lib/supabase-server";
 import { LEAN_META } from "@/lib/feeds";
 import { CATEGORY_META } from "@/lib/categories";
-import { timeAgo } from "@/lib/format";
+import { storyPlace, timeAgo } from "@/lib/format";
 
 // Summary is generated from the live article at request time (ids are runtime
 // feed hashes, so we can't prerender them).
@@ -54,21 +54,30 @@ export default async function ArticlePage({
 
   if (!story) {
     return (
-      <div className="min-h-screen bg-[#03040a] text-slate-200">
+      <div className="min-h-screen text-slate-200">
         <SiteHeader />
-        <main className="mx-auto max-w-2xl px-5 py-24 text-center">
-          <h1 className="text-2xl font-semibold text-white">
-            This story is no longer in the live feed
+        <main className="mx-auto flex max-w-2xl flex-col items-center px-5 py-24 text-center">
+          <h1 className="font-display text-3xl font-medium text-[#ece8e1]">
+            This story <span className="aurora-text italic">rotated out</span>
           </h1>
           <p className="mt-2 text-slate-400">
-            Top stories refresh every 10 minutes, so this one has rotated out.
+            Top stories refresh every few minutes, so this one is no longer in
+            the live feed.
           </p>
-          <Link
-            href="/"
-            className="mt-6 inline-block rounded-full bg-sky-500 px-5 py-2 font-medium text-white hover:bg-sky-400"
-          >
-            ← Back to the globe
-          </Link>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/"
+              className="aurora-bg rounded-full px-5 py-2.5 text-sm font-semibold text-[#07060f] transition hover:brightness-110"
+            >
+              ← Back to the globe
+            </Link>
+            <Link
+              href="/popular"
+              className="rounded-full border border-white/15 px-5 py-2.5 text-sm text-slate-200 transition hover:bg-white/[0.05]"
+            >
+              See what&apos;s trending
+            </Link>
+          </div>
         </main>
       </div>
     );
@@ -182,12 +191,14 @@ export default async function ArticlePage({
             {lean.label}
           </span>
           <span className="text-slate-500">
-            {story.city ? `· 📍 ${story.city}, ${story.country} · ` : "· "}
+            {storyPlace(story)
+              ? `· 📍 ${storyPlace(story)}${story.placement === "city" ? `, ${story.country}` : ""} · `
+              : "· "}
             {timeAgo(story.publishedAt)}
           </span>
           {rankInCat >= 1 && rankInCat <= 10 && (
             <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 font-medium text-amber-300">
-              🔥 #{rankInCat} most-read in {cat.label}
+              🔥 #{rankInCat} in {cat.label} right now
             </span>
           )}
         </div>
@@ -205,13 +216,24 @@ export default async function ArticlePage({
           />
         )}
 
-        {/* AI summary */}
-        <section className="mt-8 rounded-2xl border border-sky-400/20 bg-sky-400/[0.04] p-6">
-          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-sky-300">
-            <span aria-hidden>✨</span> AI Summary
-            <span className="font-normal normal-case text-slate-500">
-              · neutral &amp; factual
-            </span>
+        {/* Summary — framed as AI ONLY when a model actually produced it */}
+        <section className="mt-8 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-6">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-cyan-300">
+            {result.status === "ok" ? (
+              <>
+                <span aria-hidden>✨</span> AI Summary
+                <span className="font-normal normal-case text-slate-500">
+                  · neutral &amp; factual
+                </span>
+              </>
+            ) : (
+              <>
+                From the source
+                <span className="font-normal normal-case text-slate-500">
+                  · the outlet&apos;s own snippet
+                </span>
+              </>
+            )}
           </h2>
 
           <SummaryBody result={result} fallback={story.summary} />
@@ -220,8 +242,9 @@ export default async function ArticlePage({
         {/* Read the original */}
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.02] p-6 text-center">
           <p className="text-sm text-slate-400">
-            This is a neutral summary. Read the full story, in the outlet&apos;s
-            own words, at the source:
+            {result.status === "ok"
+              ? "This is a neutral summary. Read the full story, in the outlet's own words, at the source:"
+              : "Read the full story at the source:"}
           </p>
           <ReadSourceButton
             link={story.link}
@@ -263,10 +286,12 @@ export default async function ArticlePage({
           </section>
         )}
 
-        <p className="mt-10 text-center text-[11px] text-slate-600">
-          AI-generated summary — always verify important details against the
-          original source.
-        </p>
+        {result.status === "ok" && (
+          <p className="mt-10 text-center text-[11px] text-slate-500">
+            AI-generated summary — always verify important details against the
+            original source.
+          </p>
+        )}
       </main>
     </div>
   );
@@ -295,7 +320,7 @@ function SummaryBody({
             <ul className="mt-2 space-y-1.5">
               {result.summary.keyPoints.map((point, i) => (
                 <li key={i} className="flex gap-2 text-sm text-slate-300">
-                  <span className="mt-0.5 text-sky-400">•</span>
+                  <span className="mt-0.5 text-cyan-400">•</span>
                   {point}
                 </li>
               ))}
@@ -312,7 +337,7 @@ function SummaryBody({
       {fallback ? <p>{fallback}</p> : null}
       <p className="text-xs text-slate-500">
         {result.status === "no-api-key"
-          ? "AI summaries turn on once an ANTHROPIC_API_KEY is configured. Showing the source's own snippet for now."
+          ? "Neutral AI summaries are coming soon — for now, here's the outlet's own snippet."
           : result.status === "no-content"
             ? "This article couldn't be fetched for summarizing (it may be paywalled or block bots). Read it at the source below."
             : "The summary couldn't be generated right now. Read the full story at the source below."}

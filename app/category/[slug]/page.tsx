@@ -18,6 +18,19 @@ export function generateStaticParams() {
   return [...VALID].map((slug) => ({ slug }));
 }
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const meta = VALID.has(slug as Category)
+    ? CATEGORY_META[slug as Category]
+    : null;
+  if (!meta) return { title: "Category" };
+  return { title: `${meta.label} News`, description: meta.description };
+}
+
 export default async function CategoryPage({
   params,
 }: {

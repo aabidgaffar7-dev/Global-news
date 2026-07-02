@@ -19,7 +19,7 @@ const fraunces = Fraunces({
 
 export const metadata: Metadata = {
   title: {
-    default: `${BRAND_NAME} — explore a global, unbiased news network`,
+    default: `${BRAND_NAME} — world news ranked by readers, not editors`,
     template: `%s · ${BRAND_NAME}`,
   },
   description:

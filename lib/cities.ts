@@ -65,7 +65,7 @@ export const CITIES: City[] = [
   { name: "Monterrey", country: "Mexico", lat: 25.69, lng: -100.32, tier: 2 },
   { name: "Havana", country: "Cuba", lat: 23.11, lng: -82.37, tier: 2 },
   { name: "Sao Paulo", country: "Brazil", lat: -23.55, lng: -46.63, tier: 1, aliases: ["São Paulo"] },
-  { name: "Rio de Janeiro", country: "Brazil", lat: -22.91, lng: -43.17, tier: 1, aliases: ["Rio"] },
+  { name: "Rio de Janeiro", country: "Brazil", lat: -22.91, lng: -43.17, tier: 1 },
   { name: "Brasilia", country: "Brazil", lat: -15.79, lng: -47.88, tier: 2, aliases: ["Brasília"] },
   { name: "Buenos Aires", country: "Argentina", lat: -34.6, lng: -58.38, tier: 1 },
   { name: "Lima", country: "Peru", lat: -12.05, lng: -77.04, tier: 2 },
@@ -205,24 +205,43 @@ export const CITIES: City[] = [
 function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
-const CITY_MATCHERS = CITIES.map((c) => ({
-  city: c,
-  re: new RegExp(
-    `\\b(${[c.name, ...(c.aliases ?? [])].map(escapeRe).join("|")})\\b`,
-    "i",
-  ),
-}));
+
+// Known non-place collocations that would otherwise false-positive a city.
+const NAME_EXCLUDE: Record<string, string> = {
+  Washington:
+    "(?!\\s+(?:Post|State|Examiner|Times|University|Nationals|Commanders))",
+};
+
+// All-caps short aliases (LA, NYC) must match case-SENSITIVELY — otherwise
+// "La Liga" and "La Niña" geolocate to Los Angeles.
+const isAbbreviation = (a: string) => /^[A-Z.]{2,4}$/.test(a);
+
+const CITY_MATCHERS = CITIES.map((c) => {
+  const names = [c.name, ...(c.aliases ?? [])];
+  const pattern = (list: string[]) =>
+    list.map((n) => escapeRe(n) + (NAME_EXCLUDE[n] ?? "")).join("|");
+  const ci = names.filter((n) => !isAbbreviation(n));
+  const cs = names.filter(isAbbreviation);
+  return {
+    city: c,
+    ci: ci.length ? new RegExp(`\\b(${pattern(ci)})\\b`, "i") : null,
+    cs: cs.length ? new RegExp(`\\b(${pattern(cs)})\\b`) : null,
+  };
+});
 
 // Earliest mention wins, longer name breaks ties. null = no city named.
 export function geolocate(text: string): City | null {
   let best: { city: City; idx: number; len: number } | null = null;
   for (const m of CITY_MATCHERS) {
-    const match = m.re.exec(text);
-    if (!match) continue;
-    const idx = match.index;
-    const len = match[0].length;
-    if (!best || idx < best.idx || (idx === best.idx && len > best.len)) {
-      best = { city: m.city, idx, len };
+    for (const re of [m.ci, m.cs]) {
+      if (!re) continue;
+      const match = re.exec(text);
+      if (!match) continue;
+      const idx = match.index;
+      const len = match[0].length;
+      if (!best || idx < best.idx || (idx === best.idx && len > best.len)) {
+        best = { city: m.city, idx, len };
+      }
     }
   }
   return best?.city ?? null;

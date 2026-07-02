@@ -5,9 +5,11 @@ import StoryImage from "@/components/StoryImage";
 import { getUser, getServerSupabase } from "@/lib/supabase-server";
 import { getAllStories, type Story } from "@/lib/news";
 import { CATEGORY_META, type Category } from "@/lib/categories";
-import { timeAgo } from "@/lib/format";
+import { storyPlace, timeAgo } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = { title: "For You" };
 
 export default async function ForYouPage() {
   const user = await getUser();
@@ -262,7 +264,9 @@ function RecCard({
             : "trending globally"}
         </div>
         <div className="mt-2 text-[11px] text-slate-500">
-          {story.source} · 📍 {story.city} · {timeAgo(story.publishedAt)}
+          {story.source} ·{" "}
+          {storyPlace(story) ? `📍 ${storyPlace(story)} · ` : ""}
+          {timeAgo(story.publishedAt)}
         </div>
       </div>
     </Link>

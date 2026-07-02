@@ -10,6 +10,8 @@ import { timeAgo } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "Reading history" };
+
 type Row = {
   link: string;
   title: string | null;

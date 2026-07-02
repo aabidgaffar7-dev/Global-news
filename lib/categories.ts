@@ -97,21 +97,29 @@ const KEYWORDS: [Category, RegExp][] = [
     "technology",
     /\b(tech|ai|artificial intelligence|software|chip|semiconductor|google|apple|microsoft|openai|startup|cyber|quantum|robot|smartphone|gadget|app|internet|crypto|bitcoin)\b/gi,
   ],
+  // Disasters/humanitarian anchor to World so a stray "golf course turned
+  // relief centre" can't drag an earthquake story into Sports.
+  [
+    "world",
+    /\b(earthquake|flood|hurricane|wildfire|eruption|tsunami|landslide|cyclone|typhoon|famine|humanitarian|refugees?|aid workers?|disaster)\b/gi,
+  ],
 ];
 
-// Score each category by how many keyword hits it has and pick the highest
-// (array order breaks ties). Beats first-match, where array order silently
-// stole multi-topic stories into whichever bucket was checked first.
-export function categorize(text: string): Category {
+// Score each category by keyword hits — headline hits count double (the
+// headline says what a story is ABOUT; summaries mention incidental things).
+// A single stray hit isn't enough to leave the World bucket: precision
+// compounds once thousands of broad-coverage articles flow through this.
+export function categorize(title: string, summary = ""): Category {
   let best: Category = "world";
   let bestScore = 0;
   for (const [category, re] of KEYWORDS) {
-    const matches = text.match(re);
-    const score = matches ? matches.length : 0;
+    const inTitle = (title.match(re) ?? []).length * 2;
+    const inSummary = (summary.match(re) ?? []).length;
+    const score = inTitle + inSummary;
     if (score > bestScore) {
       bestScore = score;
       best = category;
     }
   }
-  return best;
+  return bestScore >= 2 ? best : "world";
 }

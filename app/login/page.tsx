@@ -7,6 +7,8 @@ import { supabaseEnabled } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "Sign in" };
+
 export default async function LoginPage() {
   const user = await getUser();
   if (user) redirect("/account");

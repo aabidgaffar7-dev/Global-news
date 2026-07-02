@@ -9,6 +9,8 @@ import { FEEDS, type Lean } from "@/lib/feeds";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "Account" };
+
 export default async function AccountPage() {
   const user = await getUser();
   if (!user) redirect("/login");

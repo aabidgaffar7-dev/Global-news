@@ -4,6 +4,19 @@ import { categorize, type Category } from "./categories";
 import { getPopularity } from "./engagement";
 import { CITIES, geolocate } from "./cities";
 import { fetchBroadNews } from "./newsdata";
+import {
+  safeHttpUrl,
+  normalizeUrl,
+  truncate,
+  stablePublishedAt,
+} from "./url";
+
+// Where a story's coordinates came from — this drives what we're allowed to
+// SAY about location. 'city': the text names a gazetteer city (trustworthy —
+// show the pin). 'country': only the country is known (show country, no city
+// pin). 'source': nothing detected, coords are the OUTLET's HQ (never present
+// as the story's location).
+export type Placement = "city" | "country" | "source";
 
 export type Story = {
   id: string;
@@ -20,20 +33,11 @@ export type Story = {
   lng: number;
   city: string;
   country: string;
-  score: number; // ranking score (cold-start blended with real popularity)
+  placement: Placement;
+  baseScore: number; // cold-start score, never mutated (blend is idempotent)
+  score: number; // ranking score (baseScore blended with real popularity)
   views?: number; // real reader views (from Supabase, once configured)
   clicks?: number; // real click-throughs to the source
-};
-
-export type NewsLocation = {
-  id: string;
-  city: string;
-  country: string;
-  lat: number;
-  lng: number;
-  stories: Story[];
-  storyCount: number;
-  sources: string[];
 };
 
 type RawItem = {
@@ -80,16 +84,6 @@ function ageHours(iso: string): number {
   return ms / 3_600_000;
 }
 
-// Only trust http(s) URLs from untrusted feeds — blocks javascript:/data: hrefs.
-function safeHttpUrl(url: string | undefined | null): string | undefined {
-  if (!url) return undefined;
-  try {
-    const proto = new URL(url).protocol;
-    return proto === "http:" || proto === "https:" ? url : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 function extractImage(item: RawItem): string | undefined {
   const candidate =
@@ -131,16 +125,18 @@ async function fetchFeed(feed: Feed): Promise<Story[]> {
         const link = safeHttpUrl(item.link);
         if (!link || !item.title) return null;
 
-        // Defensive date parse: a single unparseable pubDate must not throw
-        // (toISOString on an Invalid Date throws, which the outer catch would
-        // turn into dropping this outlet's ENTIRE feed).
-        const parsed = new Date(item.isoDate ?? item.pubDate ?? "");
-        const publishedAt = Number.isNaN(parsed.getTime())
-          ? new Date().toISOString()
-          : parsed.toISOString();
-
+        const publishedAt = stablePublishedAt(
+          item.isoDate ?? item.pubDate,
+          link,
+        );
         const title = item.title.trim();
-        const summary = item.contentSnippet?.trim().slice(0, 220);
+        const summary = truncate(item.contentSnippet);
+
+        // Place the story where the NEWS is (from its text), not where the
+        // outlet lives. No match → keep HQ coords for the globe, but mark the
+        // placement so no surface presents the HQ as the story's location.
+        const place = geolocate(`${title} ${summary ?? ""}`);
+        const base = coldStartScore(ageHours(publishedAt), i);
 
         return {
           id: hashId(`${feed.id}:${link}`),
@@ -149,15 +145,17 @@ async function fetchFeed(feed: Feed): Promise<Story[]> {
           source: feed.name,
           sourceId: feed.id,
           lean: feed.lean,
-          category: categorize(`${title} ${summary ?? ""}`),
+          category: categorize(title, summary),
           summary,
           imageUrl: extractImage(item),
           publishedAt,
-          lat: feed.lat,
-          lng: feed.lng,
-          city: feed.city,
-          country: feed.country,
-          score: coldStartScore(ageHours(publishedAt), i),
+          lat: place?.lat ?? feed.lat,
+          lng: place?.lng ?? feed.lng,
+          city: place?.name ?? feed.city,
+          country: place?.country ?? feed.country,
+          placement: place ? "city" : "source",
+          baseScore: base,
+          score: base,
         } satisfies Story;
       })
       .filter((s): s is Story => s !== null);
@@ -182,23 +180,29 @@ export async function getAllStories(): Promise<Story[]> {
   const seen = new Set<string>();
   const deduped: Story[] = [];
   for (const story of [...results.flat(), ...broad]) {
-    if (seen.has(story.link)) continue;
-    seen.add(story.link);
-    deduped.push(story);
+    const key = normalizeUrl(story.link);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    // Clone: blending must never mutate feed-level cached objects (the broad
+    // feed caches Story objects for 30 min — mutating them would re-blend and
+    // decay their scores every refresh).
+    deduped.push({ ...story });
   }
 
-  // Blend real reader popularity into the cold-start score. As views/clicks
-  // accumulate, the crowd's interest takes over from recency — this is the
-  // "people regulate what's popular" engine. No-op until Supabase is configured.
+  // Blend real reader popularity into the cold-start score — the "people
+  // regulate what's popular" engine. The blend weight GROWS with signal
+  // volume: one early view barely moves a score (and can never sink it);
+  // sustained attention earns up to an equal say with recency.
   const popularity = await getPopularity();
   for (const s of deduped) {
-    const p = popularity.get(s.link);
+    const p = popularity.get(normalizeUrl(s.link));
     if (p && (p.views || p.clicks)) {
       s.views = p.views;
       s.clicks = p.clicks;
       const engagement = p.views + p.clicks * 3; // a click-through weighs more
       const pop = Math.min(1, Math.log10(1 + engagement) / 3); // ~0..1, saturates ~1k
-      s.score = s.score * 0.5 + pop * 0.5;
+      const w = Math.min(0.5, engagement / 50); // influence earned, never subtracted
+      s.score = s.baseScore * (1 - w) + pop * w;
     }
   }
 
@@ -208,36 +212,6 @@ export async function getAllStories(): Promise<Story[]> {
   // last good set so a transient network blip doesn't empty the page.
   if (deduped.length > 0) cache = { at: Date.now(), stories: deduped };
   return cache?.stories ?? deduped;
-}
-
-export function groupByLocation(stories: Story[]): NewsLocation[] {
-  const map = new Map<string, NewsLocation>();
-  for (const s of stories) {
-    const key = `${s.lat},${s.lng}`;
-    let loc = map.get(key);
-    if (!loc) {
-      loc = {
-        id: slugify(`${s.city}-${s.country}`),
-        city: s.city,
-        country: s.country,
-        lat: s.lat,
-        lng: s.lng,
-        stories: [],
-        storyCount: 0,
-        sources: [],
-      };
-      map.set(key, loc);
-    }
-    loc.stories.push(s);
-  }
-  for (const loc of map.values()) {
-    loc.stories.sort((a, b) => b.score - a.score);
-    loc.stories = loc.stories.slice(0, 12);
-    loc.storyCount = loc.stories.length;
-    // build the source list from the stories actually shown, not the pre-slice set
-    loc.sources = [...new Set(loc.stories.map((s) => s.source))];
-  }
-  return [...map.values()];
 }
 
 // Stories bucketed by category, each list already score-sorted (stories arrive
@@ -294,25 +268,20 @@ export function globeLocations(stories: Story[]): GlobePoint[] {
   }
 
   for (const s of stories) {
-    const place = geolocate(`${s.title} ${s.summary ?? ""}`);
-    let key: string;
-    if (place) {
-      key = keyOf(place.lat, place.lng);
-    } else {
-      key = keyOf(s.lat, s.lng);
-      if (!byKey.has(key)) {
-        byKey.set(key, {
-          id: slugify(`${s.city}-${s.country}`),
-          city: s.city,
-          country: s.country,
-          lat: s.lat,
-          lng: s.lng,
-          tier: 2,
-          storyCount: 0,
-          stories: [],
-          sources: [],
-        });
-      }
+    // Placement was resolved once at ingestion; stories carry their own coords.
+    const key = keyOf(s.lat, s.lng);
+    if (!byKey.has(key)) {
+      byKey.set(key, {
+        id: slugify(`${s.city}-${s.country}`),
+        city: s.city,
+        country: s.country,
+        lat: s.lat,
+        lng: s.lng,
+        tier: 2,
+        storyCount: 0,
+        stories: [],
+        sources: [],
+      });
     }
     byKey.get(key)!.stories.push(s);
   }

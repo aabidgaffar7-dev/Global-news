@@ -18,7 +18,7 @@ import {
   type Category,
 } from "@/lib/categories";
 import { LEAN_META } from "@/lib/feeds";
-import { formatCount, timeAgo } from "@/lib/format";
+import { formatCount, storyPlace, timeAgo } from "@/lib/format";
 
 export const revalidate = 600;
 
@@ -46,7 +46,7 @@ export default async function Home() {
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-pretty text-base text-slate-400 sm:text-lg">
             Spin the globe, drop into any place, and read what people actually
-            care about — not what an algorithm wants you to see.
+            care about — surfaced by readers, not an editor&apos;s picks.
           </p>
           <form
             action="/search"
@@ -84,21 +84,12 @@ export default async function Home() {
 
         {/* Popular Now */}
         <section className="mt-20 text-center">
-          <div className="text-xs uppercase tracking-[0.25em] text-cyan-300/70">
-            Trending across the globe
-          </div>
-          <h2 className="font-display mt-3 text-3xl font-medium text-[#ece8e1] sm:text-4xl">
+          <h2 className="font-display text-3xl font-medium text-[#ece8e1] sm:text-4xl">
             Popular <span className="aurora-text italic">Now</span>
           </h2>
-          <p className="mt-2 text-slate-400">
-            The stories people are reading most — ranked by readers, not
-            algorithms.
-          </p>
           <div className="mt-3">
             <RankInfo />
           </div>
-
-          <TrendingLeanBar leans={stories.slice(0, 15).map((s) => s.lean)} />
 
           {popular.length === 0 ? (
             <p className="glass mt-8 rounded-2xl p-8 text-slate-400">
@@ -111,9 +102,12 @@ export default async function Home() {
                   <PopularCard key={story.id} story={story} rank={i + 1} />
                 ))}
               </div>
+              <TrendingLeanBar
+                leans={stories.slice(0, 15).map((s) => s.lean)}
+              />
               <Link
                 href="/popular"
-                className="mt-9 inline-flex items-center gap-1.5 rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/[0.04]"
+                className="mt-8 inline-flex items-center gap-1.5 rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/[0.04]"
               >
                 View the full leaderboard{" "}
                 <span className="aurora-text">→</span>
@@ -196,7 +190,7 @@ function PopularCard({ story, rank }: { story: Story; rank: number }) {
           >
             {lean.label}
           </span>
-          <span>· 📍 {story.city}</span>
+          {storyPlace(story) && <span>· 📍 {storyPlace(story)}</span>}
           {story.views ? <span>· 👁 {formatCount(story.views)}</span> : null}
           <span className="aurora-text ml-auto font-medium">Read →</span>
         </div>

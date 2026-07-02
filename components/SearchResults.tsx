@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { LEAN_META, type Lean } from "@/lib/feeds";
 import { CATEGORY_META, type Category } from "@/lib/categories";
-import { timeAgo } from "@/lib/format";
+import { storyPlace, timeAgo } from "@/lib/format";
 import type { Story } from "@/lib/news";
 
 type SourceFilter = "all" | "feeds" | "web";
@@ -198,7 +198,7 @@ function ResultRow({ story }: { story: Story }) {
         href={`/article/${story.id}`}
         className="group block rounded-xl border border-white/10 bg-white/[0.02] p-4 transition hover:border-cyan-400/40 hover:bg-white/[0.05]"
       >
-        <h2 className="font-medium text-slate-100 group-hover:text-white">
+        <h2 className="font-display font-medium text-slate-100 group-hover:text-white">
           {story.title}
         </h2>
         {story.summary && (
@@ -220,7 +220,7 @@ function ResultRow({ story }: { story: Story }) {
               {lean.label}
             </span>
           )}
-          {story.city && <span>· 📍 {story.city}</span>}
+          {storyPlace(story) && <span>· 📍 {storyPlace(story)}</span>}
           <span>· {timeAgo(story.publishedAt)}</span>
           <span className="aurora-text ml-auto font-medium">Read More →</span>
         </div>

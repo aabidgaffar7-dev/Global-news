@@ -1,4 +1,5 @@
 import { categorize } from "./categories";
+import { truncate } from "./url";
 import type { Story } from "./news";
 
 // Server-side only secret (NOT NEXT_PUBLIC) — never exposed to the browser.
@@ -45,8 +46,8 @@ export async function searchWeb(query: string): Promise<Story[]> {
       .filter((a) => a.url && a.title)
       .map((a) => {
         const title = a.title!.trim();
-        const summary = a.description?.trim().slice(0, 220);
-        const category = categorize(`${title} ${summary ?? ""}`);
+        const summary = truncate(a.description);
+        const category = categorize(title, summary);
         const publishedAt = a.publishedAt ?? new Date().toISOString();
         const image =
           a.image && /^https?:\/\//.test(a.image) ? a.image : undefined;
@@ -66,7 +67,7 @@ export async function searchWeb(query: string): Promise<Story[]> {
           link: a.url!,
           source,
           sourceId: "gnews",
-          lean: "intl",
+          lean: "unrated", // web outlets aren't editorially rated
           category,
           summary,
           imageUrl: image,
@@ -75,6 +76,8 @@ export async function searchWeb(query: string): Promise<Story[]> {
           lng: 0,
           city: "",
           country: "",
+          placement: "source", // no location claim for web results
+          baseScore: 0,
           score: 0,
         } satisfies Story;
       });

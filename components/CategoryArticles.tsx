@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import StoryImage from "@/components/StoryImage";
 import { LEAN_META } from "@/lib/feeds";
-import { timeAgo } from "@/lib/format";
+import { storyPlace, timeAgo } from "@/lib/format";
 import type { Story } from "@/lib/news";
 
 // Articles arrive already score-sorted (Most Popular). The toggle re-sorts
@@ -118,7 +118,8 @@ function ArticleCard({
             {lean.label}
           </span>
           <span className="ml-auto">
-            📍 {story.city} · {timeAgo(story.publishedAt)}
+            {storyPlace(story) ? `📍 ${storyPlace(story)} · ` : ""}
+            {timeAgo(story.publishedAt)}
           </span>
         </div>
       </div>
