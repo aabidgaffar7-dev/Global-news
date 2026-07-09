@@ -17,7 +17,13 @@ const fraunces = Fraunces({
   display: "swap",
 });
 
+// One env var flips the whole site to a custom domain: absolute URLs in
+// metadata (OG/Twitter), the sitemap, and robots all derive from it.
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://global-news-2vfy.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: `${BRAND_NAME} — world news ranked by readers, not editors`,
     template: `%s · ${BRAND_NAME}`,
