@@ -176,7 +176,7 @@ export default async function FollowingPage() {
   return (
     <div className="min-h-screen text-slate-200">
       <SiteHeader />
-      <main className="mx-auto max-w-5xl px-5 pb-24 pt-8">
+      <main id="main-content" className="mx-auto max-w-5xl px-5 pb-24 pt-8">
         <Link
           href="/"
           className="inline-flex items-center gap-1 text-sm text-slate-400 transition hover:text-white"

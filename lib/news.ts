@@ -220,18 +220,6 @@ export async function getAllStories(): Promise<Story[]> {
   return cache?.stories ?? deduped;
 }
 
-// Stories bucketed by category, each list already score-sorted (stories arrive
-// pre-sorted from getAllStories). Used by "Explore by Category" + category pages.
-export function groupByCategory(stories: Story[]): Map<Category, Story[]> {
-  const map = new Map<Category, Story[]>();
-  for (const s of stories) {
-    const list = map.get(s.category);
-    if (list) list.push(s);
-    else map.set(s.category, [s]);
-  }
-  return map;
-}
-
 export function storiesInCategory(
   stories: Story[],
   category: Category,

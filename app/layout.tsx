@@ -38,6 +38,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${fraunces.variable}`}>
       <body>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-cyan-400 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[#07060f]"
+        >
+          Skip to content
+        </a>
         <div className="cosmos-bg" aria-hidden />
         {children}
         <SiteFooter />

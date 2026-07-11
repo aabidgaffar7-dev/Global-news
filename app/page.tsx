@@ -33,7 +33,7 @@ export default async function Home() {
       <SiteHeader />
       <TrendingTicker stories={stories.slice(0, 14)} />
 
-      <main className="mx-auto max-w-6xl px-5 pb-24">
+      <main id="main-content" className="mx-auto max-w-6xl px-5 pb-24">
         <OnboardingStrip />
         <YourWireStrip />
 

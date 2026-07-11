@@ -56,7 +56,7 @@ export default async function ArticlePage({
     return (
       <div className="min-h-screen text-slate-200">
         <SiteHeader />
-        <main className="mx-auto flex max-w-2xl flex-col items-center px-5 py-24 text-center">
+        <main id="main-content" className="mx-auto flex max-w-2xl flex-col items-center px-5 py-24 text-center">
           <h1 className="font-display text-3xl font-medium text-[#ece8e1]">
             This story <span className="aurora-text italic">rotated out</span>
           </h1>
@@ -149,7 +149,7 @@ export default async function ArticlePage({
       <SiteHeader />
       {/* One view per session, crawler-filtered — feeds the popularity engine */}
       <ViewPing link={story.link} title={story.title} source={story.source} />
-      <main className="mx-auto max-w-3xl px-5 pb-24 pt-8">
+      <main id="main-content" className="mx-auto max-w-3xl px-5 pb-24 pt-8">
         <div className="flex items-center justify-between gap-3">
           <Link
             href="/"

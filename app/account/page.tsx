@@ -78,7 +78,7 @@ export default async function AccountPage() {
   return (
     <div className="min-h-screen text-slate-200">
       <SiteHeader />
-      <main className="mx-auto max-w-3xl px-5 pb-24 pt-8">
+      <main id="main-content" className="mx-auto max-w-3xl px-5 pb-24 pt-8">
         <div className="flex items-center justify-between">
           <Link
             href="/"

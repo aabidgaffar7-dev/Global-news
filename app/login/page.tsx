@@ -16,7 +16,7 @@ export default async function LoginPage() {
   return (
     <div className="min-h-screen text-slate-200">
       <SiteHeader />
-      <main className="mx-auto max-w-md px-5 py-16">
+      <main id="main-content" className="mx-auto max-w-md px-5 py-16">
         <Link
           href="/"
           className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white"

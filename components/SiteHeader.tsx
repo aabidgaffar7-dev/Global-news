@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import NotificationBell from "@/components/NotificationBell";
 import UserMenu from "@/components/UserMenu";
 import { CATEGORY_META, DISPLAY_CATEGORIES } from "@/lib/categories";
 
 export default function SiteHeader() {
   const pathname = usePathname();
+  const router = useRouter();
   const [topicsOpen, setTopicsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const topicsRef = useRef<HTMLDivElement>(null);
@@ -28,6 +29,25 @@ export default function SiteHeader() {
     setMenuOpen(false);
     setTopicsOpen(false);
   }, [pathname]);
+
+  // Power-user shortcut: "/" jumps to search (ignored while typing).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (
+        t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.isContentEditable)
+      )
+        return;
+      e.preventDefault();
+      router.push("/search");
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [router]);
 
   const active = (href: string) => pathname === href;
   const link = (isActive: boolean) =>
@@ -62,6 +82,8 @@ export default function SiteHeader() {
             <div ref={topicsRef} className="relative">
               <button
                 onClick={() => setTopicsOpen((o) => !o)}
+                aria-expanded={topicsOpen}
+                aria-haspopup="menu"
                 className={link(pathname.startsWith("/category"))}
               >
                 Topics <span className="text-[10px]">▾</span>

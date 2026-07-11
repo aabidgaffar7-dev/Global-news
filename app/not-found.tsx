@@ -5,7 +5,7 @@ export default function NotFound() {
   return (
     <div className="min-h-screen text-slate-200">
       <SiteHeader />
-      <main className="mx-auto flex max-w-xl flex-col items-center px-5 py-28 text-center">
+      <main id="main-content" className="mx-auto flex max-w-xl flex-col items-center px-5 py-28 text-center">
         <div className="font-display aurora-text text-7xl font-medium">404</div>
         <h1 className="font-display mt-4 text-2xl font-medium text-[#ece8e1]">
           This story drifted off the map

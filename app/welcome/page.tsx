@@ -14,7 +14,7 @@ export default async function WelcomePage() {
   return (
     <div className="min-h-screen text-slate-200">
       <SiteHeader />
-      <main className="mx-auto max-w-2xl px-5 pb-24 pt-10">
+      <main id="main-content" className="mx-auto max-w-2xl px-5 pb-24 pt-10">
         <div className="text-xs uppercase tracking-[0.25em] text-cyan-300/70">
           Welcome to GlobeNews
         </div>
