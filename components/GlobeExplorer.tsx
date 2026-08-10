@@ -126,8 +126,13 @@ export default function GlobeExplorer({
   // turned the globe into a wall of overlapping text at default zoom.
   const labelPoints = newsPoints;
 
+  // The rail is the PRIMARY way in: hitting a 6px pip on a spinning sphere is
+  // a precision task, so every active city is also a big, ordinary click
+  // target that flies the camera there and opens its stories.
+  const rail = [...newsPoints].sort((a, b) => b.storyCount - a.storyCount);
+
   return (
-    <div className="relative w-full">
+    <div className="relative grid w-full gap-4 lg:grid-cols-[1fr_310px]">
       <div
         ref={containerRef}
         className="h-[60vh] min-h-[420px] w-full overflow-hidden rounded-2xl border border-white/10 bg-[#05070f]"
@@ -200,12 +205,64 @@ export default function GlobeExplorer({
         )}
       </div>
 
-      <p className="mt-3 text-center text-xs text-slate-500">
-        Drag to spin · scroll to zoom · click a glowing city to read its top
-        stories
+      <aside className="glass flex max-h-[60vh] min-h-[280px] flex-col overflow-hidden rounded-2xl">
+        <div className="flex items-baseline justify-between border-b border-white/10 px-4 py-3">
+          <h3 className="font-display text-sm font-medium text-[#ece8e1]">
+            Where it&apos;s happening
+          </h3>
+          <span className="text-[11px] text-slate-500">
+            {rail.length} cities live
+          </span>
+        </div>
+        <ol className="flex-1 overflow-y-auto">
+          {rail.map((loc) => {
+            const lean = loc.dominantLean
+              ? LEAN_META[loc.dominantLean]
+              : null;
+            const isActive = selected?.id === loc.id;
+            return (
+              <li key={loc.id}>
+                <button
+                  onClick={() => focus(loc)}
+                  className={`flex w-full items-start gap-2.5 border-b border-white/5 px-4 py-3 text-left transition hover:bg-white/[0.05] ${
+                    isActive ? "bg-white/[0.07]" : ""
+                  }`}
+                >
+                  <span
+                    className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+                    style={{ background: lean?.color ?? "#38bdf8" }}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-baseline justify-between gap-2">
+                      <span className="truncate text-sm font-medium text-slate-200">
+                        {loc.city}
+                      </span>
+                      <span className="shrink-0 text-[11px] tabular-nums text-slate-500">
+                        {loc.storyCount}
+                      </span>
+                    </span>
+                    <span className="mt-0.5 line-clamp-2 block text-xs leading-snug text-slate-400">
+                      {loc.stories[0]?.title}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+          {rail.length === 0 && (
+            <li className="px-4 py-6 text-center text-xs text-slate-500">
+              No located stories right now.
+            </li>
+          )}
+        </ol>
+      </aside>
+
+      <p className="text-center text-xs text-slate-500 lg:col-span-2">
+        Pick a city from the list, or drag to spin · scroll to zoom · click a
+        glowing city
       </p>
 
-      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500">
+      <div className="-mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500 lg:col-span-2">
         <span className="text-slate-400">City colour = local lean:</span>
         {LEAN_LEGEND.map((l) => (
           <span key={l} className="inline-flex items-center gap-1">

@@ -4,9 +4,9 @@ import TrendingTicker from "@/components/TrendingTicker";
 import TrendingLeanBar from "@/components/TrendingLeanBar";
 import OnboardingStrip from "@/components/OnboardingStrip";
 import YourWireStrip from "@/components/YourWireStrip";
-import RankInfo from "@/components/RankInfo";
+import FrontPage from "@/components/FrontPage";
+import HowStoriesRise from "@/components/HowStoriesRise";
 import GlobeExplorer from "@/components/GlobeExplorer";
-import StoryImage from "@/components/StoryImage";
 import {
   getAllStories,
   globeLocations,
@@ -18,15 +18,19 @@ import {
   DISPLAY_CATEGORIES,
   type Category,
 } from "@/lib/categories";
-import { LEAN_META } from "@/lib/feeds";
-import { formatCount, storyPlace, timeAgo } from "@/lib/format";
+import { timeAgo } from "@/lib/format";
 
 export const revalidate = 600;
 
 export default async function Home() {
   const stories = await getAllStories();
   const locations = globeLocations(stories);
-  const popular = stories.slice(0, 6);
+  const outlets = new Set(stories.map((s) => s.source)).size;
+  const dateline = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 
   return (
     <div className="min-h-screen text-slate-200">
@@ -34,33 +38,31 @@ export default async function Home() {
       <TrendingTicker stories={stories.slice(0, 14)} />
 
       <main id="main-content" className="mx-auto max-w-6xl px-5 pb-24">
-        <OnboardingStrip />
-        <YourWireStrip />
-
-        {/* Hero */}
-        <section className="py-9 text-center sm:py-12">
-          <div className="text-xs uppercase tracking-[0.25em] text-cyan-300/70">
-            A neutral, popularity-ranked world news hub
+        {/* Masthead — a dateline and live counts, not a landing-page pitch.
+            The reader should know within one second that this is a news site
+            showing today's world. */}
+        <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-white/10 py-6 sm:py-8">
+          <div>
+            <h1 className="font-display text-balance text-3xl font-medium leading-[1.1] text-[#ece8e1] sm:text-[2.6rem]">
+              The world&apos;s news,{" "}
+              <span className="aurora-text italic">ranked by people</span>
+            </h1>
+            <p className="mt-2 text-xs uppercase tracking-wide text-slate-500">
+              {dateline} · {stories.length} stories · {outlets} outlets · updated
+              continuously
+            </p>
           </div>
-          <h1 className="font-display mx-auto mt-4 max-w-3xl text-balance text-4xl font-medium leading-[1.1] text-[#ece8e1] sm:text-6xl">
-            The world&apos;s news,{" "}
-            <span className="aurora-text italic">ranked by people</span>
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-pretty text-base text-slate-400 sm:text-lg">
-            Spin the globe, drop into any place, and read what people actually
-            care about — surfaced by readers, not an editor&apos;s picks.
-          </p>
           <form
             action="/search"
-            className="mx-auto mt-9 flex max-w-2xl items-center gap-3 rounded-full border border-white/[0.12] bg-white/[0.03] px-5 py-3.5 backdrop-blur transition focus-within:border-cyan-400/40"
+            className="flex w-full items-center gap-2.5 rounded-full border border-white/[0.12] bg-white/[0.03] px-4 py-2.5 backdrop-blur transition focus-within:border-cyan-400/40 sm:w-80"
           >
             <svg
-              width="16"
-              height="16"
+              width="15"
+              height="15"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.6"
+              strokeWidth="1.7"
               strokeLinecap="round"
               className="shrink-0 text-slate-500"
               aria-hidden
@@ -71,74 +73,73 @@ export default async function Home() {
             <input
               type="text"
               name="q"
-              placeholder="Search locations, sources, or the wider web…"
+              placeholder="Search the world's news…"
+              aria-label="Search"
               className="w-full bg-transparent text-sm text-slate-200 outline-none placeholder:text-slate-500"
             />
           </form>
         </section>
 
-        {/* Interactive Earth */}
-        <section id="globe" className="glass scroll-mt-20 rounded-3xl p-5 sm:p-6">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl" aria-hidden>
-              🌐
-            </span>
-            <h2 className="font-display text-2xl font-medium text-[#ece8e1]">
-              Interactive Earth
+        {/* THE NEWS — first interactive content on the page. */}
+        <div className="mt-8">
+          <FrontPage stories={stories.slice(0, 8)} />
+        </div>
+
+        {/* Evidence for the claim the masthead just made. */}
+        <div className="mt-8">
+          <TrendingLeanBar leans={stories.slice(0, 15).map((s) => s.lean)} />
+        </div>
+
+        {/* Personal rails come AFTER the news — a visitor should meet the
+            world's front page before being handed recommendations. */}
+        <div className="mt-8 space-y-4">
+          <YourWireStrip />
+          <OnboardingStrip />
+        </div>
+
+        {/* Now that they've seen the news, explain what makes this order real. */}
+        <div className="mt-16">
+          <HowStoriesRise />
+        </div>
+
+        {/* The globe earns its place once the reader knows what they're
+            looking at: the same stories, plotted where they happened. */}
+        <section
+          id="globe"
+          className="mt-16 scroll-mt-20"
+          aria-labelledby="globe-heading"
+        >
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-white/10 pb-3">
+            <h2
+              id="globe-heading"
+              className="font-display text-2xl font-medium text-[#ece8e1]"
+            >
+              Where in the world it&apos;s happening
             </h2>
+            <p className="text-sm text-slate-500">
+              Every story above, plotted on the map.
+            </p>
           </div>
-          <p className="mt-1 text-sm text-slate-400">
-            Spin the globe and drop into any region&apos;s top stories.
-          </p>
           <div className="mt-5">
             <GlobeExplorer locations={locations} />
           </div>
         </section>
 
-        {/* Popular Now */}
-        <section className="mt-20 text-center">
-          <h2 className="font-display text-3xl font-medium text-[#ece8e1] sm:text-4xl">
-            Popular <span className="aurora-text italic">Now</span>
-          </h2>
-          <div className="mt-3">
-            <RankInfo />
+        {/* Explore by Category */}
+        <section className="mt-16" aria-labelledby="cat-heading">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-white/10 pb-3">
+            <h2
+              id="cat-heading"
+              className="font-display text-2xl font-medium text-[#ece8e1]"
+            >
+              Browse by topic
+            </h2>
+            <p className="text-sm text-slate-500">
+              Every topic, ranked the same way.
+            </p>
           </div>
 
-          {popular.length === 0 ? (
-            <p className="glass mt-8 rounded-2xl p-8 text-slate-400">
-              Stories are warming up — refresh in a moment.
-            </p>
-          ) : (
-            <>
-              <div className="mt-9 grid gap-5 md:grid-cols-3">
-                {popular.map((story, i) => (
-                  <PopularCard key={story.id} story={story} rank={i + 1} />
-                ))}
-              </div>
-              <TrendingLeanBar
-                leans={stories.slice(0, 15).map((s) => s.lean)}
-              />
-              <Link
-                href="/popular"
-                className="mt-8 inline-flex items-center gap-1.5 rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/[0.04]"
-              >
-                View the full leaderboard{" "}
-                <span className="aurora-text">→</span>
-              </Link>
-            </>
-          )}
-        </section>
-
-        {/* Explore by Category */}
-        <section className="mt-20">
-          <h2 className="font-display text-center text-3xl font-medium text-[#ece8e1] sm:text-4xl">
-            Explore by <span className="aurora-text italic">Category</span>
-          </h2>
-          <p className="mt-2 text-center text-slate-400">
-            Discover the news that matters to you.
-          </p>
-
-          <div className="mt-9 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {DISPLAY_CATEGORIES.map((category) => {
               const inCat = storiesInCategory(stories, category);
               return (
@@ -154,61 +155,6 @@ export default async function Home() {
         </section>
       </main>
     </div>
-  );
-}
-
-const RANK_BADGE = [
-  "from-cyan-400 to-violet-500",
-  "from-violet-400 to-pink-500",
-  "from-emerald-400 to-teal-500",
-];
-
-function PopularCard({ story, rank }: { story: Story; rank: number }) {
-  const cat = CATEGORY_META[story.category];
-  const lean = LEAN_META[story.lean];
-  return (
-    <Link
-      href={`/article/${story.id}`}
-      className="group glass flex flex-col overflow-hidden rounded-2xl text-left transition hover:border-white/25 hover:bg-white/[0.05]"
-    >
-      <div className="relative h-44 w-full">
-        <StoryImage src={story.imageUrl} className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#07060f]/85 via-transparent to-transparent" />
-        <span
-          className={`absolute left-3 top-3 rounded-full bg-gradient-to-r ${RANK_BADGE[rank - 1] ?? RANK_BADGE[0]} px-2.5 py-1 text-xs font-medium text-[#07060f]`}
-        >
-          #{rank} Most Popular
-        </span>
-        <span
-          className="absolute right-3 top-3 rounded-full px-2 py-0.5 text-[11px] font-medium"
-          style={{ color: cat.color, background: "rgba(7,6,15,0.6)" }}
-        >
-          {cat.emoji} {cat.label}
-        </span>
-      </div>
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="font-display line-clamp-2 text-lg font-medium text-[#ece8e1] group-hover:text-white">
-          {story.title}
-        </h3>
-        {story.summary && (
-          <p className="mt-2 line-clamp-2 flex-1 text-sm text-slate-400">
-            {story.summary}
-          </p>
-        )}
-        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/5 pt-3 text-[11px] text-slate-500">
-          <span className="font-medium text-slate-300">{story.source}</span>
-          <span
-            className="rounded-full px-1.5 py-0.5"
-            style={{ color: lean.color, background: `${lean.color}1a` }}
-          >
-            {lean.label}
-          </span>
-          {storyPlace(story) && <span>· 📍 {storyPlace(story)}</span>}
-          {story.views ? <span>· 👁 {formatCount(story.views)}</span> : null}
-          <span className="aurora-text ml-auto font-medium">Read →</span>
-        </div>
-      </div>
-    </Link>
   );
 }
 
