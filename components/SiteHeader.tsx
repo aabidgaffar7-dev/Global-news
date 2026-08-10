@@ -106,6 +106,12 @@ export default function SiteHeader() {
               )}
             </div>
 
+            <Link href="/globe" className={link(active("/globe"))}>
+              Globe
+            </Link>
+            <Link href="/polls" className={link(active("/polls"))}>
+              Polls
+            </Link>
             <Link href="/following" className={link(active("/following"))}>
               Following
             </Link>
@@ -182,8 +188,10 @@ export default function SiteHeader() {
             <div className="grid grid-cols-2 gap-2">
               {(
                 [
-                  ["✦ For You", "/for-you"],
-                  ["♥ Following", "/following"],
+                  ["For You", "/for-you"],
+                  ["Following", "/following"],
+                  ["Globe", "/globe"],
+                  ["Polls", "/polls"],
                   ["Popular", "/popular"],
                   ["Saved", "/saved"],
                   ["History", "/history"],

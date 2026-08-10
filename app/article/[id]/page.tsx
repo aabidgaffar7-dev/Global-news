@@ -6,6 +6,9 @@ import ShareButton from "@/components/ShareButton";
 import SaveButton from "@/components/SaveButton";
 import StoryImage from "@/components/StoryImage";
 import ViewPing from "@/components/ViewPing";
+import { ArticleVotes, Discussion } from "@/components/Discussion";
+import { getArticleCommunity } from "@/lib/community";
+import { normalizeUrl } from "@/lib/url";
 import { resolveStory, summarizeStory } from "@/lib/article";
 import { getAllStories, type Story } from "@/lib/news";
 import { getUser, getServerSupabase } from "@/lib/supabase-server";
@@ -109,6 +112,8 @@ export default async function ArticlePage({
     initialSaved = !!savedRow;
   }
 
+  const community = await getArticleCommunity(story.link);
+  const communityLink = normalizeUrl(story.link);
   const result = await summarizeStory(story);
   const lean = LEAN_META[story.lean];
   const cat = CATEGORY_META[story.category];
@@ -157,7 +162,14 @@ export default async function ArticlePage({
           >
             ← Back to Home
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <ArticleVotes
+              link={communityLink}
+              userId={community.userId}
+              initialScore={community.score}
+              initialVote={community.myVote}
+              commentCount={community.commentCount}
+            />
             <SaveButton
               userId={user?.id ?? null}
               initialSaved={initialSaved}
@@ -291,6 +303,8 @@ export default async function ArticlePage({
             original source.
           </p>
         )}
+
+        <Discussion link={communityLink} community={community} />
       </main>
     </div>
   );

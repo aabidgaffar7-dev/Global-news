@@ -6,7 +6,7 @@ import OnboardingStrip from "@/components/OnboardingStrip";
 import YourWireStrip from "@/components/YourWireStrip";
 import FrontPage from "@/components/FrontPage";
 import HowStoriesRise from "@/components/HowStoriesRise";
-import GlobeExplorer from "@/components/GlobeExplorer";
+import Icon, { CATEGORY_ICON } from "@/components/Icon";
 import {
   getAllStories,
   globeLocations,
@@ -24,7 +24,9 @@ export const revalidate = 600;
 
 export default async function Home() {
   const stories = await getAllStories();
-  const locations = globeLocations(stories);
+  const active = globeLocations(stories).filter((l) => l.storyCount > 0);
+  const activeCities = active.length;
+  const countries = new Set(active.map((l) => l.country)).size;
   const outlets = new Set(stories.map((s) => s.source)).size;
   const dateline = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -102,27 +104,39 @@ export default async function Home() {
           <HowStoriesRise />
         </div>
 
-        {/* The globe earns its place once the reader knows what they're
-            looking at: the same stories, plotted where they happened. */}
-        <section
-          id="globe"
-          className="mt-16 scroll-mt-20"
-          aria-labelledby="globe-heading"
-        >
-          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-white/10 pb-3">
-            <h2
-              id="globe-heading"
-              className="font-display text-2xl font-medium text-[#ece8e1]"
-            >
-              Where in the world it&apos;s happening
-            </h2>
-            <p className="text-sm text-slate-500">
-              Every story above, plotted on the map.
-            </p>
-          </div>
-          <div className="mt-5">
-            <GlobeExplorer locations={locations} />
-          </div>
+        {/* The globe now has its own page. Home links to it with a light
+            promo instead of booting a WebGL scene every visit. */}
+        <section id="globe" className="mt-16 scroll-mt-20">
+          <Link
+            href="/globe"
+            className="group glass relative flex flex-wrap items-center justify-between gap-6 overflow-hidden rounded-3xl p-6 transition hover:border-white/25 sm:p-8"
+          >
+            <div
+              className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full opacity-40 blur-2xl transition group-hover:opacity-60"
+              style={{
+                background:
+                  "radial-gradient(circle at 40% 40%, #2563eb, transparent 65%)",
+              }}
+              aria-hidden
+            />
+            <div className="relative max-w-lg">
+              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-cyan-300/80">
+                <Icon name="globe" size={13} />
+                The map
+              </div>
+              <h2 className="font-display mt-2 text-2xl font-medium text-[#ece8e1] sm:text-3xl">
+                See where in the world it&apos;s happening
+              </h2>
+              <p className="mt-2 text-sm text-slate-400">
+                Every story we track, plotted on a live Earth — {activeCities}{" "}
+                cities reporting across {countries} countries right now.
+              </p>
+            </div>
+            <span className="relative inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium text-slate-100 transition group-hover:border-cyan-400/50 group-hover:bg-white/[0.06]">
+              Open the globe
+              <span className="aurora-text">→</span>
+            </span>
+          </Link>
         </section>
 
         {/* Explore by Category */}
@@ -172,13 +186,14 @@ function CategoryCard({
     <div className="glass flex flex-col rounded-2xl p-5">
       <div className="flex items-center gap-3">
         <span
-          className="flex h-11 w-11 items-center justify-center rounded-xl text-xl"
+          className="flex h-11 w-11 items-center justify-center rounded-xl"
           style={{
             background: `${meta.color}1f`,
             boxShadow: `0 0 20px ${meta.color}22`,
+            color: meta.color,
           }}
         >
-          {meta.emoji}
+          <Icon name={CATEGORY_ICON[category] ?? "globe"} size={19} />
         </span>
         <div className="flex-1">
           <h3 className="font-display text-lg font-medium text-[#ece8e1]">
