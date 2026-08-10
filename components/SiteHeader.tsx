@@ -109,6 +109,12 @@ export default function SiteHeader() {
             <Link href="/globe" className={link(active("/globe"))}>
               Globe
             </Link>
+            <Link
+              href="/community"
+              className={link(pathname.startsWith("/community"))}
+            >
+              Community
+            </Link>
             <Link href="/polls" className={link(active("/polls"))}>
               Polls
             </Link>
@@ -191,6 +197,7 @@ export default function SiteHeader() {
                   ["For You", "/for-you"],
                   ["Following", "/following"],
                   ["Globe", "/globe"],
+                  ["Community", "/community"],
                   ["Polls", "/polls"],
                   ["Popular", "/popular"],
                   ["Saved", "/saved"],

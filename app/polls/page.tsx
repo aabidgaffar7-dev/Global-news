@@ -1,6 +1,7 @@
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import PollCard from "@/components/PollCard";
+import { PollComposer } from "@/components/Posts";
 import Icon from "@/components/Icon";
 import { getPolls } from "@/lib/community";
 
@@ -31,10 +32,14 @@ export default async function PollsPage() {
             Reader <span className="aurora-text italic">polls</span>
           </h1>
           <p className="mt-2 max-w-xl text-slate-400">
-            This site is built on what people actually think. Cast a vote and
-            watch where everyone else landed.
+            This site is built on what people actually think. Ask your own
+            question, cast a vote, and watch where everyone else landed.
           </p>
         </header>
+
+        <div className="mt-6">
+          <PollComposer userId={userId} />
+        </div>
 
         {polls.length === 0 ? (
           <div className="glass mt-8 rounded-2xl p-10 text-center">
