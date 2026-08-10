@@ -19,7 +19,12 @@ const Globe = dynamic(() => import("react-globe.gl"), {
   ),
 }) as unknown as ComponentType<Record<string, unknown>>;
 
-const EARTH = "/textures/earth-night.jpg";
+// A lit blue-marble Earth with real terrain relief and ocean specular reads as
+// a planet; the old flat night map left half the globe invisible and made the
+// centrepiece look unfinished.
+const EARTH = "/textures/earth-blue-marble.jpg";
+const BUMP = "/textures/earth-topology.png";
+const WATER = "/textures/earth-water.png";
 const SKY = "/textures/night-sky.png";
 const BASE_COLOR = "rgba(148,163,184,0.5)"; // faint dot for a city with no current news
 
@@ -71,7 +76,36 @@ export default function GlobeExplorer({
     c.rotateSpeed = 0.8;
     c.minDistance = 108; // globe radius is 100 — get close to the surface
     c.maxDistance = 800; // …or way out into orbit
-    g.pointOfView({ lat: 20, lng: 10, altitude: 2.5 }, 0);
+    g.pointOfView({ lat: 20, lng: 10, altitude: 2.0 }, 0);
+
+    // Material + lighting pass: terrain relief, glinting oceans, and enough
+    // ambient light that the night side stays readable instead of going black.
+    void (async () => {
+      const THREE = await import("three");
+      const mat = g.globeMaterial() as {
+        bumpScale: number;
+        specularMap?: unknown;
+        specular?: unknown;
+        shininess?: number;
+      };
+      mat.bumpScale = 12;
+      new THREE.TextureLoader().load(WATER, (tex: unknown) => {
+        mat.specularMap = tex;
+        mat.specular = new THREE.Color("#3a4a63");
+        mat.shininess = 14;
+      });
+
+      const scene = g.scene?.();
+      if (scene) {
+        const lights = (
+          scene.children as Array<{ type?: string; intensity?: number }>
+        ).filter((o) => o.type === "DirectionalLight" || o.type === "AmbientLight");
+        for (const l of lights) {
+          if (l.type === "AmbientLight") l.intensity = 1.5;
+          if (l.type === "DirectionalLight") l.intensity = 1.1;
+        }
+      }
+    })();
   }
 
   useEffect(() => {
@@ -88,9 +122,9 @@ export default function GlobeExplorer({
   }
 
   const newsPoints = locations.filter((l) => l.storyCount > 0);
-  const labelPoints = locations.filter(
-    (l) => l.storyCount > 0 || l.tier === 1,
-  );
+  // Label only cities that actually have news — labelling every quiet hub too
+  // turned the globe into a wall of overlapping text at default zoom.
+  const labelPoints = newsPoints;
 
   return (
     <div className="relative w-full">
@@ -106,9 +140,10 @@ export default function GlobeExplorer({
             height={size.h}
             backgroundColor="rgba(0,0,0,0)"
             globeImageUrl={EARTH}
+            bumpImageUrl={BUMP}
             backgroundImageUrl={SKY}
-            atmosphereColor="#9d8cff"
-            atmosphereAltitude={0.22}
+            atmosphereColor="#7cc4ff"
+            atmosphereAltitude={0.25}
             pointsData={locations}
             pointLat="lat"
             pointLng="lng"
@@ -117,11 +152,13 @@ export default function GlobeExplorer({
                 ? LEAN_META[d.dominantLean].color
                 : BASE_COLOR
             }
-            pointAltitude={(d: GlobePoint) => (d.storyCount > 0 ? 0.02 : 0.005)}
+            // News cities stand off the surface like pins so they read against
+            // a bright Earth; quiet cities stay flush and faint.
+            pointAltitude={(d: GlobePoint) =>
+              d.storyCount > 0 ? 0.012 + Math.min(d.storyCount, 15) * 0.004 : 0.004
+            }
             pointRadius={(d: GlobePoint) =>
-              d.storyCount > 0
-                ? 0.28 + Math.min(d.storyCount, 12) * 0.05
-                : 0.1
+              d.storyCount > 0 ? 0.3 + Math.min(d.storyCount, 12) * 0.055 : 0.09
             }
             pointLabel={(d: GlobePoint) => {
               const lean = d.dominantLean ? LEAN_META[d.dominantLean] : null;
@@ -151,12 +188,12 @@ export default function GlobeExplorer({
             labelLat="lat"
             labelLng="lng"
             labelText="city"
-            labelSize={(d: GlobePoint) => (d.storyCount > 0 ? 0.85 : 0.55)}
+            labelSize={(d: GlobePoint) => (d.storyCount > 0 ? 0.9 : 0.55)}
             labelColor={(d: GlobePoint) =>
-              d.storyCount > 0 ? "rgba(236,232,225,0.92)" : "rgba(148,163,184,0.55)"
+              d.storyCount > 0 ? "rgba(255,255,255,0.98)" : "rgba(226,232,240,0.7)"
             }
-            labelResolution={2}
-            labelAltitude={0.008}
+            labelResolution={3}
+            labelAltitude={0.02}
             labelDotRadius={0}
             onLabelClick={(d: GlobePoint) => focus(d)}
           />

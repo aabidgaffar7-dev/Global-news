@@ -45,11 +45,15 @@ type RawItem = {
   title?: string;
   link?: string;
   contentSnippet?: string;
+  content?: string;
+  contentEncoded?: string;
   isoDate?: string;
   pubDate?: string;
   enclosure?: { url?: string };
   mediaThumbnail?: { $?: { url?: string } };
   mediaContent?: Array<{ $?: { url?: string; medium?: string } }>;
+  mediaGroup?: { "media:content"?: Array<{ $?: { url?: string } }> };
+  itunesImage?: { $?: { href?: string } };
 };
 
 const parser: Parser<unknown, RawItem> = new Parser({
@@ -62,6 +66,9 @@ const parser: Parser<unknown, RawItem> = new Parser({
     item: [
       ["media:thumbnail", "mediaThumbnail"],
       ["media:content", "mediaContent", { keepArray: true }],
+      ["media:group", "mediaGroup"],
+      ["content:encoded", "contentEncoded"],
+      ["itunes:image", "itunesImage"],
     ],
   },
 });
@@ -86,6 +93,16 @@ function ageHours(iso: string): number {
 }
 
 
+// Feeds advertise images in half a dozen different places, and many outlets
+// only embed one inside the HTML body. Check every known slot before giving
+// up — a missing image is the difference between a rich card and a placeholder.
+const HTML_IMG = /<img[^>]+src=["']([^"']+)["']/i;
+
+function firstHtmlImage(html: string | undefined): string | undefined {
+  if (!html) return undefined;
+  return HTML_IMG.exec(html)?.[1];
+}
+
 function extractImage(item: RawItem): string | undefined {
   const candidate =
     item.mediaThumbnail?.$?.url ??
@@ -93,8 +110,12 @@ function extractImage(item: RawItem): string | undefined {
     item.mediaContent?.find(
       (m) => m.$?.url && (!m.$.medium || m.$.medium === "image"),
     )?.$?.url ??
-    item.enclosure?.url;
-  return safeHttpUrl(candidate);
+    item.mediaGroup?.["media:content"]?.find((m) => m.$?.url)?.$?.url ??
+    item.enclosure?.url ??
+    item.itunesImage?.$?.href ??
+    firstHtmlImage(item.contentEncoded) ??
+    firstHtmlImage(item.content);
+  return safeHttpUrl(candidate?.trim());
 }
 
 // Cold-start ranking. With zero users, "popularity" is approximated by recency
@@ -119,7 +140,9 @@ async function fetchFeed(feed: Feed): Promise<Story[]> {
     if (!res.ok) return [];
     const xml = await res.text();
     const parsed = await parser.parseString(xml);
-    const items = (parsed.items ?? []).slice(0, 8);
+    // Outlets publish 20-50 items per feed; taking only a handful was the main
+    // reason the site felt thin. Cost is zero — the XML is already fetched.
+    const items = (parsed.items ?? []).slice(0, 30);
 
     return items
       .map((item, i): Story | null => {
