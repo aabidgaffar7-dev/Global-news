@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Icon from "@/components/Icon";
+import ModTools from "@/components/ModTools";
 import { getBrowserSupabase } from "@/lib/supabase-browser";
 import { timeAgo } from "@/lib/format";
 import type { ArticleCommunity, CommentNode } from "@/lib/community";
@@ -254,6 +255,14 @@ function CommentItem({
             >
               Reply
             </button>
+          )}
+          {!node.deleted && (
+            <ModTools
+              kind="comment"
+              id={node.id}
+              ownerId={node.authorId}
+              userId={userId}
+            />
           )}
         </div>
 

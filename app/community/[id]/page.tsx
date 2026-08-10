@@ -4,6 +4,7 @@ import SiteHeader from "@/components/SiteHeader";
 import ShareButton from "@/components/ShareButton";
 import { PostVoteBar } from "@/components/Posts";
 import { Discussion } from "@/components/Discussion";
+import ModTools from "@/components/ModTools";
 import { getPost, postLink } from "@/lib/posts";
 import { getArticleCommunity } from "@/lib/community";
 import { timeAgo } from "@/lib/format";
@@ -82,6 +83,14 @@ export default async function PostPage({
             <span className="text-sm text-slate-500">
               {community.commentCount}{" "}
               {community.commentCount === 1 ? "reply" : "replies"}
+            </span>
+            <span className="ml-auto">
+              <ModTools
+                kind="post"
+                id={post.id}
+                ownerId={post.authorId}
+                userId={community.userId}
+              />
             </span>
           </div>
         </article>

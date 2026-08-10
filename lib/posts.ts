@@ -6,6 +6,7 @@ export type PostSummary = {
   body: string | null;
   topic: string | null;
   author: string;
+  authorId: string;
   createdAt: string;
   score: number;
   myVote: number;
@@ -80,6 +81,7 @@ export async function listPosts(
       body: (p.body as string) ?? null,
       topic: (p.topic as string) ?? null,
       author: names.get(p.user_id as string) ?? "Reader",
+      authorId: p.user_id as string,
       createdAt: p.created_at as string,
       score: score.get(p.id as string) ?? 0,
       myVote: mine.get(p.id as string) ?? 0,
@@ -128,6 +130,7 @@ export async function getPost(id: string): Promise<PostSummary | null> {
       body: (p.body as string) ?? null,
       topic: (p.topic as string) ?? null,
       author: (profRes.data?.display_name as string) || "Reader",
+      authorId: p.user_id as string,
       createdAt: p.created_at as string,
       score: votes.reduce((n, v) => n + ((v.value as number) ?? 0), 0),
       myVote: (uid && votes.find((v) => v.user_id === uid)?.value) || 0,
