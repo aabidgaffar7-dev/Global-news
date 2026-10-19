@@ -20,13 +20,13 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 - Community layer: votes, discussion, polls, user posts, moderation.
 
 ## Backlog (proposed; Aabid can reorder or veto)
-1. Add `.env.example` listing every environment variable the code reads and where each comes from.
-2. Replace the default create-next-app README with a real one: what GlobeNews is, how to run it, env setup, which Supabase SQL files to run in what order.
-3. Run `scripts/check-feeds.mjs`; fix or flag dead feeds.
-4. Propose more international outlets to widen coverage, with suggested lean labels for Aabid to approve.
+1. Replace the default create-next-app README with a real one: what GlobeNews is, how to run it, env setup, which Supabase SQL files to run in what order.
+2. Run `scripts/check-feeds.mjs`; fix or flag dead feeds.
+3. Propose more international outlets to widen coverage, with suggested lean labels for Aabid to approve.
 
 ## Waiting on Aabid
 (nothing yet)
 
 ## Shift log (newest first)
+- 2026-10-19 (shift 2): Added `.env.example` (all 6 env vars the code reads, with where each comes from; Supabase required, rest optional) and un-ignored it in `.gitignore`. Lint and build pass.
 - 2026-10-19: Cleared all lint errors/warnings (build already passed). Real code fixes for the two expression warnings; documented eslint-disables for intentional set-state-in-effect (localStorage/SSR) patterns, one `any` (globe handle) and Date.now in a server page. Created SHIFTS.md.
