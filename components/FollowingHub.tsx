@@ -501,7 +501,12 @@ function LeanBalanceMeter({
   // Honest verdict from the real spread (the roster skews center/international).
   let dominant: Lean = "center";
   let max = -1;
-  for (const b of bands) if (b.count > max) (max = b.count), (dominant = b.lean);
+  for (const b of bands) {
+    if (b.count > max) {
+      max = b.count;
+      dominant = b.lean;
+    }
+  }
   const distinct = bands.filter((b) => b.count > 0).length;
   let verdict = "Just getting started";
   let balanced = false;
