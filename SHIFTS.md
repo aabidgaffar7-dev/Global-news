@@ -42,6 +42,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing yet)
 
 ## Shift log (newest first)
+- 2026-10-21 (feed check): Aabid ran the check on his PC: 38/42 healthy. Removed Haaretz (403, blocks bots), Korea Herald and Hurriyet Daily News (200 but 0 items; feed URL/format wrong). Candidates to re-add later with a working feed URL. One more failure was above the screenshot; waiting on its name.
 - 2026-10-21 (follow-up): Aabid approved all 10 proposed outlets and leans; added them to `lib/feeds.ts` (roster now 41). Lint and build pass.
 - 2026-10-21 (shift 4): `scripts/check-feeds.mjs` now imports the real roster from `lib/feeds.ts` (the old hardcoded list had drifted, e.g. CBC vs Global News) and runs in parallel. The cloud sandbox has no outbound internet, so feed health could NOT be tested here; needs a run on Aabid's PC. Added 10 proposed outlets with suggested leans for Aabid to approve. Lint and build pass.
 - 2026-10-20 (shift 3): Replaced the create-next-app README with a real one (what GlobeNews is, local run, env table, Supabase SQL run order inferred from file dependencies, so please sanity-check it). Lint and build pass.
