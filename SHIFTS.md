@@ -21,12 +21,11 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 
 ## Backlog (proposed; Aabid can reorder or veto)
 1. Re-run `node scripts/check-feeds.mjs` from a machine with open internet (cloud shifts are network-blocked) and fix or drop dead feeds. (Needs Aabid's PC: run it and paste the output, or say "fine".)
-2. Add the outlets Aabid approves from the proposal list below (one entry each in `lib/feeds.ts`). (blocked on Aabid's approval of outlets and leans)
 3. Show each story's outlet lean label on the story card/detail page if it is not already prominent (proposed).
 4. Add a "Sources" or "How we rate outlets" page explaining the lean labels and the roster (proposed).
 5. Add a coverage-by-region indicator so readers can see which parts of the world have thin coverage (proposed).
 
-## Proposed outlets (Aabid decides outlets and leans; URLs are unverified because cloud shifts can't reach the internet)
+## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
 Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle East, Africa, SE Asia, Latin America and Korea/Turkey. Suggested leans are only a starting point.
 - Dawn (Karachi, Pakistan): https://www.dawn.com/feeds/home - center
 - The Hindu (Chennai, India): https://www.thehindu.com/news/feeder/default.rss - center-left
@@ -43,6 +42,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing yet)
 
 ## Shift log (newest first)
+- 2026-10-21 (follow-up): Aabid approved all 10 proposed outlets and leans; added them to `lib/feeds.ts` (roster now 41). Lint and build pass.
 - 2026-10-21 (shift 4): `scripts/check-feeds.mjs` now imports the real roster from `lib/feeds.ts` (the old hardcoded list had drifted, e.g. CBC vs Global News) and runs in parallel. The cloud sandbox has no outbound internet, so feed health could NOT be tested here; needs a run on Aabid's PC. Added 10 proposed outlets with suggested leans for Aabid to approve. Lint and build pass.
 - 2026-10-20 (shift 3): Replaced the create-next-app README with a real one (what GlobeNews is, local run, env table, Supabase SQL run order inferred from file dependencies, so please sanity-check it). Lint and build pass.
 - 2026-10-19 (shift 2): Added `.env.example` (all 6 env vars the code reads, with where each comes from; Supabase required, rest optional) and un-ignored it in `.gitignore`. Lint and build pass.
