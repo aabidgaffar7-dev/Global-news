@@ -179,7 +179,7 @@ export const FEEDS: Feed[] = [
   {
     id: "huffpost",
     name: "HuffPost",
-    url: "https://chaski.huffpost.com/us/auto/vertical/front-page",
+    url: "https://www.huffpost.com/section/front-page/feed",
     city: "New York",
     country: "United States",
     lat: 40.7128,
