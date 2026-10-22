@@ -8,6 +8,7 @@ const LINKS: [string, string][] = [
   ["For You", "/for-you"],
   ["Saved", "/saved"],
   ["About & Methodology", "/about"],
+  ["Our Sources", "/sources"],
   ["Account", "/account"],
 ];
 

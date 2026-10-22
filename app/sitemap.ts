@@ -8,7 +8,7 @@ const BASE =
 // /saved, /history) and the dynamic /article/[id] space are intentionally left
 // out — articles rotate, and user pages are noindex.
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = ["", "/popular", "/about", "/search"];
+  const pages = ["", "/popular", "/about", "/sources", "/search"];
   const categories = [...DISPLAY_CATEGORIES, "world"].map(
     (c) => `/category/${c}`,
   );
