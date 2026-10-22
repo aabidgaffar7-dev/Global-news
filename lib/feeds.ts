@@ -177,9 +177,19 @@ export const FEEDS: Feed[] = [
   // Genuine spectrum coverage — the lean transparency feature is meaningless
   // if the roster only spans center-left to center.
   {
-    id: "huffpost",
-    name: "HuffPost",
-    url: "https://www.huffpost.com/section/front-page/feed",
+    id: "motherjones",
+    name: "Mother Jones",
+    url: "https://www.motherjones.com/feed/",
+    city: "San Francisco",
+    country: "United States",
+    lat: 37.7749,
+    lng: -122.4194,
+    lean: "left",
+  },
+  {
+    id: "democracynow",
+    name: "Democracy Now!",
+    url: "https://www.democracynow.org/democracynow.rss",
     city: "New York",
     country: "United States",
     lat: 40.7128,
