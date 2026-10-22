@@ -39,9 +39,10 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 - Buenos Aires Times (Argentina): https://www.batimes.com.ar/feed - center
 
 ## Waiting on Aabid
-(nothing yet)
+- HuffPost feed returns 0 items (both URLs). It's the only `left` outlet. Aabid to test the candidates (Mother Jones, The Nation, The Intercept, Democracy Now!) with check-feeds and approve one as a replacement or addition.
 
 ## Shift log (newest first)
+- 2026-10-22: HuffPost's new feed URL also returns 0 items on Aabid's PC. `check-feeds.mjs` now takes candidate URLs as arguments and shows where a 0-item feed actually landed. Waiting on Aabid to test candidate left-leaning replacements and approve one.
 - 2026-10-21 (feed check 2): Final failure was HuffPost (200 but 0 items). It's the only `left` outlet now that Haaretz is gone and is in WelcomePicker, so I kept it and swapped to `https://www.huffpost.com/section/front-page/feed` (unverified; Aabid to re-run the check). If still 0 items, replace with another left-leaning outlet.
 - 2026-10-21 (feed check): Aabid ran the check on his PC: 38/42 healthy. Removed Haaretz (403, blocks bots), Korea Herald and Hurriyet Daily News (200 but 0 items; feed URL/format wrong). Candidates to re-add later with a working feed URL. One more failure was above the screenshot; waiting on its name.
 - 2026-10-21 (follow-up): Aabid approved all 10 proposed outlets and leans; added them to `lib/feeds.ts` (roster now 41). Lint and build pass.
