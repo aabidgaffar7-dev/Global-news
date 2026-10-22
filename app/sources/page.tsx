@@ -9,6 +9,37 @@ export const metadata: Metadata = {
     "Every hand-rated outlet on GlobeNews, grouped by political lean, with where each one is based.",
 };
 
+const REGION_OF: Record<string, string> = {
+  Argentina: "Latin America",
+  Brazil: "Latin America",
+  Uruguay: "Latin America",
+  Canada: "North America",
+  "United States": "North America",
+  France: "Europe",
+  Germany: "Europe",
+  "United Kingdom": "Europe",
+  Russia: "Europe",
+  Israel: "Middle East",
+  Qatar: "Middle East",
+  "Saudi Arabia": "Middle East",
+  India: "Asia",
+  Pakistan: "Asia",
+  China: "Asia",
+  Japan: "Asia",
+  Singapore: "Asia",
+  "South Africa": "Africa",
+  Australia: "Oceania",
+};
+const REGIONS = [
+  "North America",
+  "Europe",
+  "Asia",
+  "Middle East",
+  "Latin America",
+  "Africa",
+  "Oceania",
+];
+
 export default function SourcesPage() {
   const groups = LEAN_ORDER.map((lean) => ({
     lean,
@@ -16,6 +47,12 @@ export default function SourcesPage() {
       a.name.localeCompare(b.name),
     ),
   })).filter((g) => g.feeds.length > 0);
+  const regions = REGIONS.map((name) => ({
+    name,
+    count: FEEDS.filter((f) => (REGION_OF[f.country] ?? "Other") === name)
+      .length,
+  }));
+  const maxRegion = Math.max(1, ...regions.map((r) => r.count));
   const countries = new Set(FEEDS.map((f) => f.country)).size;
 
   return (
@@ -45,7 +82,33 @@ export default function SourcesPage() {
           </p>
         </header>
 
-        <div className="mt-10 space-y-4">
+        <section className="glass mt-10 rounded-2xl p-6">
+          <h2 className="font-display text-xl font-medium text-[#ece8e1]">
+            Coverage by region
+          </h2>
+          <p className="mt-1.5 text-sm text-slate-400">
+            Hand-rated outlets by where they&apos;re based. Thin bars are
+            places where our own roster has fewer voices.
+          </p>
+          <ul className="mt-4 space-y-2.5">
+            {regions.map((r) => (
+              <li key={r.name} className="flex items-center gap-3 text-sm">
+                <span className="w-28 shrink-0 text-slate-300">{r.name}</span>
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
+                  <div
+                    className="aurora-bg h-full rounded-full"
+                    style={{ width: `${(r.count / maxRegion) * 100}%` }}
+                  />
+                </div>
+                <span className="w-6 text-right tabular-nums text-slate-500">
+                  {r.count}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <div className="mt-4 space-y-4">
           {groups.map(({ lean, feeds }) => (
             <section key={lean} className="glass rounded-2xl p-6">
               <h2 className="flex items-center gap-3 font-display text-xl font-medium text-[#ece8e1]">
