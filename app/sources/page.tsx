@@ -2,43 +2,13 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
 import { LEAN_META, LEAN_ORDER, FEEDS } from "@/lib/feeds";
+import { REGION_OF, REGIONS } from "@/lib/regions";
 
 export const metadata: Metadata = {
   title: "Our sources",
   description:
     "Every hand-rated outlet on GlobeNews, grouped by political lean, with where each one is based.",
 };
-
-const REGION_OF: Record<string, string> = {
-  Argentina: "Latin America",
-  Brazil: "Latin America",
-  Uruguay: "Latin America",
-  Canada: "North America",
-  "United States": "North America",
-  France: "Europe",
-  Germany: "Europe",
-  "United Kingdom": "Europe",
-  Russia: "Europe",
-  Israel: "Middle East",
-  Qatar: "Middle East",
-  "Saudi Arabia": "Middle East",
-  India: "Asia",
-  Pakistan: "Asia",
-  China: "Asia",
-  Japan: "Asia",
-  Singapore: "Asia",
-  "South Africa": "Africa",
-  Australia: "Oceania",
-};
-const REGIONS = [
-  "North America",
-  "Europe",
-  "Asia",
-  "Middle East",
-  "Latin America",
-  "Africa",
-  "Oceania",
-];
 
 export default function SourcesPage() {
   const groups = LEAN_ORDER.map((lean) => ({

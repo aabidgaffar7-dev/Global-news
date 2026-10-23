@@ -21,10 +21,11 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 
 ## Backlog (proposed; Aabid can reorder or veto)
 1. Re-run `node scripts/check-feeds.mjs` from a machine with open internet (cloud shifts are network-blocked) and fix or drop dead feeds. (Needs Aabid's PC: run it and paste the output, or say "fine".)
-2. Add an outlet page (`/source/[id]`) showing the outlet's lean, location and latest stories; link outlet names on `/sources` to it (proposed).
-3. Widen Africa coverage beyond South Africa (e.g. Nigeria, Kenya, Egypt outlets) with suggested leans for Aabid to approve; the new `/sources` region bar shows it is thin (proposed).
-4. Re-add Korea and Turkey outlets with working feed URLs (Korea Herald and Hurriyet were dropped for 0 items) and test candidates with `check-feeds.mjs` (proposed; needs Aabid's PC to test).
-5. Add a region filter chip row to the search or category pages using the same country-to-region map as `/sources` (proposed).
+2. Widen Africa coverage beyond South Africa (e.g. Nigeria, Kenya, Egypt outlets) with suggested leans for Aabid to approve; the new `/sources` region bar shows it is thin (proposed).
+3. Re-add Korea and Turkey outlets with working feed URLs (Korea Herald and Hurriyet were dropped for 0 items) and test candidates with `check-feeds.mjs` (proposed; needs Aabid's PC to test).
+5. Add outlet "last updated"/story-count health badge on `/source/[id]` and flag outlets with 0 live stories on `/sources` (proposed).
+6. Add a "Compare coverage" view: pick a topic and show how outlets of different leans headline it side by side (proposed; split into a data step then a UI step).
+7. Show the region filter on category pages and the home feed too, reusing `lib/regions.ts` (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
 Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle East, Africa, SE Asia, Latin America and Korea/Turkey. Suggested leans are only a starting point.
@@ -43,6 +44,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-10-23 (shift 6): Added an outlet page `/source/[id]` (lean badge, city/country, live story count, full sortable story list); outlet names on `/sources` link to it and all outlets are in the sitemap. Added a region filter chip row to search results (new shared `lib/regions.ts`, with ~40 more countries mapped so story locations classify). Lint and build pass.
 - 2026-10-22 (shift 5): Lean labels were already on story cards and the article page, so I closed that item. Added `/sources` ("Our sources"): all rated outlets grouped by lean with country, plus a coverage-by-region bar chart (Africa, Oceania and Latin America are thinnest). Linked from About, the footer and the sitemap. Lint and build pass.
 - 2026-10-22 (follow-up): HuffPost's feed redirects to an empty XML doc, so it's removed. Aabid tested four left candidates (all healthy) and left the pick to Claude: added Mother Jones and Democracy Now! (both `left`, both mostly news reporting rather than opinion), giving 2 left vs 2 right. WelcomePicker starter list now uses Mother Jones instead of HuffPost. Old `huffpost` follows in Supabase just go quiet; no schema change. The Nation (50 items) and The Intercept (20) also passed if more left coverage is wanted.
 - 2026-10-22: HuffPost's new feed URL also returns 0 items on Aabid's PC. `check-feeds.mjs` now takes candidate URLs as arguments and shows where a 0-item feed actually landed. Waiting on Aabid to test candidate left-leaning replacements and approve one.
