@@ -128,7 +128,12 @@ export default function SourcesPage() {
               <ul className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
                 {feeds.map((f) => (
                   <li key={f.id} className="flex items-baseline justify-between gap-3">
-                    <span className="text-slate-200">{f.name}</span>
+                    <Link
+                      href={`/source/${f.id}`}
+                      className="text-slate-200 transition hover:text-cyan-300"
+                    >
+                      {f.name}
+                    </Link>
                     <span className="text-xs text-slate-500">{f.country}</span>
                   </li>
                 ))}
