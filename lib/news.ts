@@ -313,7 +313,12 @@ export function globeLocations(stories: Story[]): GlobePoint[] {
     for (const s of pt.stories) counts.set(s.lean, (counts.get(s.lean) ?? 0) + 1);
     let bestLean: Lean | undefined;
     let max = -1;
-    for (const [l, c] of counts) if (c > max) ((max = c), (bestLean = l));
+    for (const [l, c] of counts) {
+      if (c > max) {
+        max = c;
+        bestLean = l;
+      }
+    }
     pt.dominantLean = bestLean;
   }
 

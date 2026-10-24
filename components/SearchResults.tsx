@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { LEAN_META, type Lean } from "@/lib/feeds";
 import { CATEGORY_META, type Category } from "@/lib/categories";
+import { REGIONS, regionOf } from "@/lib/regions";
 import { storyPlace, timeAgo } from "@/lib/format";
 import type { Story } from "@/lib/news";
 
@@ -21,6 +22,7 @@ export default function SearchResults({
 }) {
   const [cat, setCat] = useState<Category | "all">("all");
   const [lean, setLean] = useState<Lean | "all">("all");
+  const [region, setRegion] = useState<string>("all");
   const [src, setSrc] = useState<SourceFilter>("all");
   const [sort, setSort] = useState<Sort>("relevant");
 
@@ -32,6 +34,10 @@ export default function SearchResults({
     () => [...new Set(results.map((r) => r.lean))],
     [results],
   );
+  const regions = useMemo(() => {
+    const present = new Set(results.map((r) => regionOf(r.country)));
+    return REGIONS.filter((r) => present.has(r));
+  }, [results]);
   const hasWeb = results.some((r) => r.sourceId === "gnews");
   const hasFeeds = results.some((r) => r.sourceId !== "gnews");
 
@@ -40,6 +46,7 @@ export default function SearchResults({
       (r) =>
         (cat === "all" || r.category === cat) &&
         (lean === "all" || r.lean === lean) &&
+        (region === "all" || regionOf(r.country) === region) &&
         (src === "all" ||
           (src === "web" ? r.sourceId === "gnews" : r.sourceId !== "gnews")),
     );
@@ -50,7 +57,7 @@ export default function SearchResults({
       );
     }
     return list;
-  }, [results, cat, lean, src, sort]);
+  }, [results, cat, lean, region, src, sort]);
 
   return (
     <>
@@ -91,6 +98,22 @@ export default function SearchResults({
                   onClick={() => setCat(c)}
                 >
                   {CATEGORY_META[c]?.emoji} {CATEGORY_META[c]?.label ?? c}
+                </Chip>
+              ))}
+            </Facets>
+          )}
+          {regions.length > 1 && (
+            <Facets>
+              <Chip active={region === "all"} onClick={() => setRegion("all")}>
+                All regions
+              </Chip>
+              {regions.map((r) => (
+                <Chip
+                  key={r}
+                  active={region === r}
+                  onClick={() => setRegion(r)}
+                >
+                  🌍 {r}
                 </Chip>
               ))}
             </Facets>

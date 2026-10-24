@@ -139,6 +139,7 @@ export default function CesiumGlobeInner({
         }
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time init after Cesium loads
       setReady(true);
     } catch (e) {
       console.error("[cesium] init failed", e);

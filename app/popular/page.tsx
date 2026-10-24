@@ -41,6 +41,8 @@ export default async function PopularPage({
   const win = WINDOWS.find((w) => w.key === when) ?? WINDOWS[0];
 
   const all = await getAllStories();
+  // Server component, runs once per request; the purity rule targets client re-renders.
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
 
   // Windowed views rank by engagement WITHIN the window when that data
