@@ -37,6 +37,20 @@ export default async function SourcePage({
 
   const stories = await getAllStories();
   const articles = stories.filter((s) => s.sourceId === feed.id);
+  const latest = articles.reduce<number | null>((max, a) => {
+    const t = Date.parse(a.publishedAt);
+    return Number.isNaN(t) || (max !== null && t <= max) ? max : t;
+  }, null);
+  // eslint-disable-next-line react-hooks/purity -- server page, revalidated every 10 minutes
+  const hoursAgo = latest === null ? null : (Date.now() - latest) / 3_600_000;
+  const latestLabel =
+    hoursAgo === null
+      ? null
+      : hoursAgo < 1
+        ? "under an hour ago"
+        : hoursAgo < 48
+          ? `${Math.floor(hoursAgo)}h ago`
+          : `${Math.floor(hoursAgo / 24)}d ago`;
 
   return (
     <div className="min-h-screen text-slate-200">
@@ -64,6 +78,13 @@ export default async function SourcePage({
               📍 {feed.city}, {feed.country}
             </span>
             <span>📰 {articles.length} stories right now</span>
+            {latestLabel ? (
+              <span>🕒 Latest story {latestLabel}</span>
+            ) : (
+              <span className="rounded-full bg-amber-400/10 px-3 py-1 text-amber-300">
+                ⚠ No live stories — feed may be down
+              </span>
+            )}
           </div>
           <p className="mt-4 max-w-2xl text-sm text-slate-400">
             The lean label is a hand-made estimate of this outlet&apos;s typical

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
 import { LEAN_META, LEAN_ORDER, FEEDS } from "@/lib/feeds";
+import { getAllStories } from "@/lib/news";
 import { REGION_OF, REGIONS } from "@/lib/regions";
 
 export const metadata: Metadata = {
@@ -10,7 +11,11 @@ export const metadata: Metadata = {
     "Every hand-rated outlet on GlobeNews, grouped by political lean, with where each one is based.",
 };
 
-export default function SourcesPage() {
+export const revalidate = 600;
+
+export default async function SourcesPage() {
+  const stories = await getAllStories();
+  const liveSources = new Set(stories.map((s) => s.sourceId));
   const groups = LEAN_ORDER.map((lean) => ({
     lean,
     feeds: FEEDS.filter((f) => f.lean === lean).sort((a, b) =>
@@ -104,7 +109,17 @@ export default function SourcesPage() {
                     >
                       {f.name}
                     </Link>
-                    <span className="text-xs text-slate-500">{f.country}</span>
+                    <span className="flex items-baseline gap-2 text-xs text-slate-500">
+                      {liveSources.has(f.id) ? null : (
+                        <span
+                          className="rounded-full bg-amber-400/10 px-2 py-0.5 text-amber-300"
+                          title="No live stories right now — the feed may be down"
+                        >
+                          no stories
+                        </span>
+                      )}
+                      {f.country}
+                    </span>
                   </li>
                 ))}
               </ul>
