@@ -24,8 +24,9 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 2. Widen Africa coverage beyond South Africa (e.g. Nigeria, Kenya, Egypt outlets) with suggested leans for Aabid to approve; the new `/sources` region bar shows it is thin (proposed).
 3. Re-add Korea and Turkey outlets with working feed URLs (Korea Herald and Hurriyet were dropped for 0 items) and test candidates with `check-feeds.mjs` (proposed; needs Aabid's PC to test).
 5. Add a "Compare coverage" view: pick a topic and show how outlets of different leans headline it side by side (proposed; split into a data step then a UI step).
-6. Show the region filter on category pages and the home feed too, reusing `lib/regions.ts` (proposed).
-7. Add a "Report a broken feed" link on `/source/[id]` for outlets showing no stories, plus a small `/api/health` JSON of per-outlet story counts for monitoring (proposed).
+6. Show the region filter on the home feed and `/popular` too (category pages done), reusing `lib/regions.ts` (proposed).
+7. Add a "Report a broken feed" link on `/source/[id]` for outlets showing no stories (needs a destination: an email address or GitHub issues link from Aabid; `/api/health` is done) (proposed).
+9. Add a "Compare coverage" data step: group stories by shared topic keywords across outlets of different leans in `lib/news.ts` (proposed).
 8. Add a lean filter chip row to search results alongside the region chips (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
@@ -45,6 +46,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-10-25 (shift 8): Category pages now have a region chip row (with story counts) that filters the article grid. Added `/api/health`: JSON of per-outlet story counts, latest story time and a `silent` list for uptime monitoring. Lint and build pass.
 - 2026-10-24 (shift 7): `/source/[id]` now shows when the outlet's latest story was published, or an amber "feed may be down" warning if it has none; `/sources` flags outlets with no live stories and revalidates every 10 min. Only one task this shift. Lint and build pass (the sandbox is offline, so the flags only show with live data).
 - 2026-10-23 (shift 6): Added an outlet page `/source/[id]` (lean badge, city/country, live story count, full sortable story list); outlet names on `/sources` link to it and all outlets are in the sitemap. Added a region filter chip row to search results (new shared `lib/regions.ts`, with ~40 more countries mapped so story locations classify). Lint and build pass.
 - 2026-10-22 (shift 5): Lean labels were already on story cards and the article page, so I closed that item. Added `/sources` ("Our sources"): all rated outlets grouped by lean with country, plus a coverage-by-region bar chart (Africa, Oceania and Latin America are thinnest). Linked from About, the footer and the sitemap. Lint and build pass.
