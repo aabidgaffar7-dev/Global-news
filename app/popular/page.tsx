@@ -11,6 +11,7 @@ import {
   type Category,
 } from "@/lib/categories";
 import { LEAN_META } from "@/lib/feeds";
+import { REGIONS, regionOf } from "@/lib/regions";
 import { formatCount, storyPlace, timeAgo } from "@/lib/format";
 
 export const revalidate = 600;
@@ -32,13 +33,14 @@ const WINDOWS = [
 export default async function PopularPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cat?: string; when?: string }>;
+  searchParams: Promise<{ cat?: string; when?: string; region?: string }>;
 }) {
-  const { cat, when } = await searchParams;
+  const { cat, when, region } = await searchParams;
   const activeCat = (DISPLAY_CATEGORIES as string[]).includes(cat ?? "")
     ? (cat as Category)
     : null;
   const win = WINDOWS.find((w) => w.key === when) ?? WINDOWS[0];
+  const activeRegion = REGIONS.find((r) => r === region) ?? null;
 
   const all = await getAllStories();
   // Server component, runs once per request; the purity rule targets client re-renders.
@@ -55,6 +57,7 @@ export default async function PopularPage({
 
   const filtered = all
     .filter((s) => (activeCat ? s.category === activeCat : true))
+    .filter((s) => (activeRegion ? regionOf(s.country) === activeRegion : true))
     .filter(
       (s) =>
         win.hours === Infinity ||
@@ -64,11 +67,17 @@ export default async function PopularPage({
     .slice(0, 40);
 
   // Build a URL keeping the other filter intact.
-  const qp = (next: { cat?: string | null; when?: string }) => {
+  const qp = (next: {
+    cat?: string | null;
+    when?: string;
+    region?: string | null;
+  }) => {
     const c = next.cat !== undefined ? next.cat : activeCat;
     const w = next.when !== undefined ? next.when : win.key;
+    const r = next.region !== undefined ? next.region : activeRegion;
     const params = new URLSearchParams();
     if (c) params.set("cat", c);
+    if (r) params.set("region", r);
     if (w && w !== "all") params.set("when", w);
     const qs = params.toString();
     return `/popular${qs ? `?${qs}` : ""}`;
@@ -115,6 +124,20 @@ export default async function PopularPage({
                 color={CATEGORY_META[c].color}
               >
                 {CATEGORY_META[c].emoji} {CATEGORY_META[c].label}
+              </FilterPill>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <FilterPill href={qp({ region: null })} active={!activeRegion}>
+              All regions
+            </FilterPill>
+            {REGIONS.map((r) => (
+              <FilterPill
+                key={r}
+                href={qp({ region: r })}
+                active={activeRegion === r}
+              >
+                🌍 {r}
               </FilterPill>
             ))}
           </div>
