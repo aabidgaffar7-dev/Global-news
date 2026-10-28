@@ -23,10 +23,9 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 1. Re-run `node scripts/check-feeds.mjs` from a machine with open internet (cloud shifts are network-blocked) and fix or drop dead feeds. (Needs Aabid's PC: run it and paste the output, or say "fine".)
 2. Widen Africa coverage beyond South Africa (e.g. Nigeria, Kenya, Egypt outlets) with suggested leans for Aabid to approve; the new `/sources` region bar shows it is thin (proposed).
 3. Re-add Korea and Turkey outlets with working feed URLs (Korea Herald and Hurriyet were dropped for 0 items) and test candidates with `check-feeds.mjs` (proposed; needs Aabid's PC to test).
-5. Add a "Compare coverage" view: pick a topic and show how outlets of different leans headline it side by side (proposed; split into a data step then a UI step).
 7. Add a "Report a broken feed" link on `/source/[id]` for outlets showing no stories (needs a destination: an email address or GitHub issues link from Aabid; `/api/health` is done) (proposed).
-9. Add a "Compare coverage" data step: group stories by shared topic keywords across outlets of different leans in `lib/news.ts` (proposed).
-10. Add a lean filter to `/popular` (search already has one) so readers can see the leaderboard by vantage point (proposed).
+9. Add a `/compare` page that uses `clusterCoverage()` from `lib/compare.ts` (done, data step) to show each topic cluster with headlines side by side, grouped by lean, linked from the nav/footer (proposed).
+10. Show a small "Covered by N outlets across M leans" chip on the article page when the story belongs to a cluster (proposed).
 11. Add a "Report a broken feed" or "Suggest an outlet" form once Aabid picks a destination (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
@@ -46,6 +45,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-10-28 (shift 11): `/popular` now has a lean filter chip row (works with topic, region and time filters, URL-based `?lean=`). Added `lib/compare.ts` with `clusterCoverage()`, which groups same-event stories across outlets with 2+ distinct leans (sanity-checked on sample headlines; no UI yet). Lint and build pass.
 - 2026-10-27 (shift 10): Home page now has a region chip row (URL-based `?region=`) that filters the front page and the trending lean bar; shows an empty state when a region has no stories. Only one task this shift (the rest of the backlog needs Aabid or is large). Lint and build pass.
 - 2026-10-26 (shift 9): `/popular` now has a region chip row (works with the topic and time filters, URL-based `?region=`). Search already had a lean filter, so that backlog item was closed. Only one task this shift. Lint and build pass.
 - 2026-10-25 (shift 8): Category pages now have a region chip row (with story counts) that filters the article grid. Added `/api/health`: JSON of per-outlet story counts, latest story time and a `silent` list for uptime monitoring. Lint and build pass.
