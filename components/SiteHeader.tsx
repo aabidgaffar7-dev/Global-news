@@ -201,6 +201,7 @@ export default function SiteHeader() {
                   ["Community", "/community"],
                   ["Polls", "/polls"],
                   ["Popular", "/popular"],
+                  ["Compare", "/compare"],
                   ["Saved", "/saved"],
                   ["History", "/history"],
                   ["About", "/about"],
