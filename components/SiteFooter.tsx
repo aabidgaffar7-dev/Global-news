@@ -10,6 +10,7 @@ const LINKS: [string, string][] = [
   ["Saved", "/saved"],
   ["About & Methodology", "/about"],
   ["Our Sources", "/sources"],
+  ["RSS Feed", "/feed.xml"],
   ["Account", "/account"],
 ];
 
