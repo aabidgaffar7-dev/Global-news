@@ -18,6 +18,7 @@ export default function UserMenu() {
 
   useEffect(() => {
     if (!supabaseEnabled) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- nothing to wait for when Supabase is off
       setReady(true);
       return;
     }

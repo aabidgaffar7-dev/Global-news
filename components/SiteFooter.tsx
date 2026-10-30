@@ -4,10 +4,13 @@ import { BRAND_TAGLINE } from "@/lib/brand";
 const LINKS: [string, string][] = [
   ["Home", "/"],
   ["Most Popular", "/popular"],
+  ["Compare Coverage", "/compare"],
   ["Following", "/following"],
   ["For You", "/for-you"],
   ["Saved", "/saved"],
   ["About & Methodology", "/about"],
+  ["Our Sources", "/sources"],
+  ["RSS Feed", "/feed.xml"],
   ["Account", "/account"],
 ];
 

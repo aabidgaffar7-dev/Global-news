@@ -18,12 +18,25 @@ import {
   DISPLAY_CATEGORIES,
   type Category,
 } from "@/lib/categories";
+import { REGIONS, regionOf } from "@/lib/regions";
+import { clusterCoverage } from "@/lib/compare";
+import { LEAN_META } from "@/lib/feeds";
 import { timeAgo } from "@/lib/format";
 
 export const revalidate = 600;
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ region?: string }>;
+}) {
+  const { region } = await searchParams;
+  const activeRegion = REGIONS.find((r) => r === region) ?? null;
   const stories = await getAllStories();
+  const regionStories = activeRegion
+    ? stories.filter((s) => regionOf(s.country) === activeRegion)
+    : stories;
+  const clusters = clusterCoverage(stories, { limit: 3 });
   const active = globeLocations(stories).filter((l) => l.storyCount > 0);
   const activeCities = active.length;
   const countries = new Set(active.map((l) => l.country)).size;
@@ -83,14 +96,85 @@ export default async function Home() {
         </section>
 
         {/* THE NEWS — first interactive content on the page. */}
-        <div className="mt-8">
-          <FrontPage stories={stories.slice(0, 8)} />
+        <nav
+          aria-label="Filter by region"
+          className="mt-6 flex flex-wrap gap-2"
+        >
+          {[null, ...REGIONS].map((r) => (
+            <Link
+              key={r ?? "all"}
+              href={r ? `/?region=${encodeURIComponent(r)}` : "/"}
+              aria-current={activeRegion === r ? "true" : undefined}
+              className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                activeRegion === r
+                  ? "border-transparent bg-white/10 text-white"
+                  : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+              }`}
+            >
+              {r ? `🌍 ${r}` : "All regions"}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="mt-6">
+          {regionStories.length === 0 ? (
+            <p className="glass rounded-2xl p-6 text-sm text-slate-400">
+              No stories from {activeRegion} right now.
+            </p>
+          ) : (
+            <FrontPage stories={regionStories.slice(0, 8)} />
+          )}
         </div>
 
         {/* Evidence for the claim the masthead just made. */}
         <div className="mt-8">
-          <TrendingLeanBar leans={stories.slice(0, 15).map((s) => s.lean)} />
+          <TrendingLeanBar leans={regionStories.slice(0, 15).map((s) => s.lean)} />
         </div>
+
+        {clusters.length > 0 && (
+          <section className="mt-8" aria-labelledby="compare-heading">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 border-b border-white/10 pb-2">
+              <h2
+                id="compare-heading"
+                className="font-display text-xl font-medium text-[#ece8e1]"
+              >
+                Same story, different vantage points
+              </h2>
+              <Link
+                href="/compare"
+                className="text-sm text-cyan-300 hover:underline"
+              >
+                Compare coverage →
+              </Link>
+            </div>
+            <ul className="mt-4 grid gap-4 md:grid-cols-3">
+              {clusters.map((c) => (
+                <li key={c.id}>
+                  <Link
+                    href="/compare"
+                    className="glass block h-full rounded-2xl p-4 transition hover:border-white/25"
+                  >
+                    <div className="line-clamp-2 text-sm text-slate-200">
+                      {c.stories[0].title}
+                    </div>
+                    <div className="mt-2 text-xs text-slate-500">
+                      {c.stories.length} outlets · {c.leans.length} leans
+                    </div>
+                    <div className="mt-2 flex gap-1.5" aria-hidden>
+                      {c.leans.map((l) => (
+                        <span
+                          key={l}
+                          className="h-2 w-2 rounded-full"
+                          style={{ background: LEAN_META[l].color }}
+                        />
+                      ))}
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Personal rails come AFTER the news — a visitor should meet the
             world's front page before being handed recommendations. */}

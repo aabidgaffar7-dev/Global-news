@@ -10,7 +10,8 @@ import {
   DISPLAY_CATEGORIES,
   type Category,
 } from "@/lib/categories";
-import { LEAN_META } from "@/lib/feeds";
+import { LEAN_META, type Lean } from "@/lib/feeds";
+import { REGIONS, regionOf } from "@/lib/regions";
 import { formatCount, storyPlace, timeAgo } from "@/lib/format";
 
 export const revalidate = 600;
@@ -18,7 +19,7 @@ export const revalidate = 600;
 export const metadata = {
   title: "Most Popular",
   description:
-    "The full trending leaderboard — world news ranked by what readers actually open, filterable by topic and time.",
+    "The full trending leaderboard — world news ranked by what readers actually open, filterable by topic, region, outlet lean and time.",
 };
 
 // Windows filter by PUBLISH date (labels say so — "most read today" would
@@ -29,18 +30,34 @@ const WINDOWS = [
   { key: "today", label: "Published today", hours: 24 },
 ] as const;
 
+const LEAN_ORDER: Lean[] = [
+  "left",
+  "center-left",
+  "center",
+  "center-right",
+  "right",
+  "intl",
+];
+
 export default async function PopularPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cat?: string; when?: string }>;
+  searchParams: Promise<{ cat?: string; when?: string; region?: string; lean?: string }>;
 }) {
-  const { cat, when } = await searchParams;
+  const { cat, when, region, lean } = await searchParams;
   const activeCat = (DISPLAY_CATEGORIES as string[]).includes(cat ?? "")
     ? (cat as Category)
     : null;
   const win = WINDOWS.find((w) => w.key === when) ?? WINDOWS[0];
+  const activeRegion = REGIONS.find((r) => r === region) ?? null;
+
+  const activeLean = (LEAN_ORDER as string[]).includes(lean ?? "")
+    ? (lean as Lean)
+    : null;
 
   const all = await getAllStories();
+  // Server component, runs once per request; the purity rule targets client re-renders.
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
 
   // Windowed views rank by engagement WITHIN the window when that data
@@ -53,6 +70,8 @@ export default async function PopularPage({
 
   const filtered = all
     .filter((s) => (activeCat ? s.category === activeCat : true))
+    .filter((s) => (activeRegion ? regionOf(s.country) === activeRegion : true))
+    .filter((s) => (activeLean ? s.lean === activeLean : true))
     .filter(
       (s) =>
         win.hours === Infinity ||
@@ -62,11 +81,20 @@ export default async function PopularPage({
     .slice(0, 40);
 
   // Build a URL keeping the other filter intact.
-  const qp = (next: { cat?: string | null; when?: string }) => {
+  const qp = (next: {
+    cat?: string | null;
+    when?: string;
+    region?: string | null;
+    lean?: string | null;
+  }) => {
     const c = next.cat !== undefined ? next.cat : activeCat;
     const w = next.when !== undefined ? next.when : win.key;
+    const r = next.region !== undefined ? next.region : activeRegion;
+    const l = next.lean !== undefined ? next.lean : activeLean;
     const params = new URLSearchParams();
+    if (l) params.set("lean", l);
     if (c) params.set("cat", c);
+    if (r) params.set("region", r);
     if (w && w !== "all") params.set("when", w);
     const qs = params.toString();
     return `/popular${qs ? `?${qs}` : ""}`;
@@ -113,6 +141,35 @@ export default async function PopularPage({
                 color={CATEGORY_META[c].color}
               >
                 {CATEGORY_META[c].emoji} {CATEGORY_META[c].label}
+              </FilterPill>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <FilterPill href={qp({ region: null })} active={!activeRegion}>
+              All regions
+            </FilterPill>
+            {REGIONS.map((r) => (
+              <FilterPill
+                key={r}
+                href={qp({ region: r })}
+                active={activeRegion === r}
+              >
+                🌍 {r}
+              </FilterPill>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <FilterPill href={qp({ lean: null })} active={!activeLean}>
+              All leans
+            </FilterPill>
+            {LEAN_ORDER.map((l) => (
+              <FilterPill
+                key={l}
+                href={qp({ lean: l })}
+                active={activeLean === l}
+                color={LEAN_META[l].color}
+              >
+                {LEAN_META[l].label}
               </FilterPill>
             ))}
           </div>

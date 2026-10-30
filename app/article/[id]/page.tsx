@@ -11,6 +11,7 @@ import { getArticleCommunity } from "@/lib/community";
 import { normalizeUrl } from "@/lib/url";
 import { resolveStory, summarizeStory } from "@/lib/article";
 import { getAllStories, type Story } from "@/lib/news";
+import { clusterCoverage } from "@/lib/compare";
 import { getUser, getServerSupabase } from "@/lib/supabase-server";
 import { LEAN_META } from "@/lib/feeds";
 import { CATEGORY_META } from "@/lib/categories";
@@ -130,6 +131,9 @@ export default async function ArticlePage({
     new Set(
       (t.toLowerCase().match(/[a-z]{4,}/g) ?? []).filter((w) => !STOP.has(w)),
     );
+  const cluster = clusterCoverage(all, { limit: 100 }).find((c) =>
+    c.stories.some((s) => s.id === story.id),
+  );
   const myKw = keywords(story.title);
   const coverage = others
     .map((s) => {
@@ -217,6 +221,16 @@ export default async function ArticlePage({
         <h1 className="font-display mt-3 text-3xl font-medium leading-tight text-white sm:text-4xl">
           {story.title}
         </h1>
+
+        {cluster && (
+          <Link
+            href="/compare"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-cyan-400/25 bg-cyan-400/[0.06] px-3 py-1 text-xs text-cyan-200 transition hover:bg-cyan-400/10"
+          >
+            Covered by {cluster.stories.length} outlets across{" "}
+            {cluster.leans.length} leans · compare →
+          </Link>
+        )}
 
         {story.imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element

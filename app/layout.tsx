@@ -30,6 +30,9 @@ export const metadata: Metadata = {
   },
   description:
     "A neutral, popularity-ranked world news hub. Spin the globe and read the top stories from any region.",
+  alternates: {
+    types: { "application/rss+xml": "/feed.xml" },
+  },
 };
 
 export default function RootLayout({
