@@ -27,7 +27,6 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 11. Add a "Report a broken feed" or "Suggest an outlet" form once Aabid picks a destination (proposed).
 12. Add a lean/region filter and a topic-keyword link from each `/compare` cluster to a search for that topic (proposed).
 13. Tune `clusterCoverage()` thresholds against live data and show a "how this was grouped" note on `/compare` (proposed).
-16. Add per-category RSS feeds (`/category/[c]/feed.xml`) (proposed).
 17. Add a lean-balance badge to each `/compare` cluster (e.g. "left-leaning headlines use X, right use Y" shared-word diff) (proposed).
 18. Add an "Open Graph image" per article/outlet page for nicer link sharing (proposed).
 
@@ -48,6 +47,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-10-31 (shift 14): Added per-category RSS feeds at `/category/[slug]/feed.xml` (top 30 stories, auto-discovery link in the page head plus a visible "RSS feed" link). Shared the RSS builder in `lib/rss.ts` (used by `/feed.xml` too). Only one task this shift (other unblocked items are speculative). Lint and build pass.
 - 2026-10-30 (shift 13): Added `/feed.xml`, an RSS 2.0 feed of the top 30 stories (linked in the footer and page head for feed readers). Home page now shows a strip of the top 3 multi-lean coverage clusters linking to `/compare`. Lint and build pass.
 - 2026-10-29 (shift 12): New `/compare` page: topic clusters with headlines side by side, grouped by lean, linked from the footer, mobile menu and sitemap. Article pages show a "Covered by N outlets across M leans" chip linking to it when the story is in a cluster. Lint and build pass (sandbox offline, so clusters only appear with live data).
 - 2026-10-28 (shift 11): `/popular` now has a lean filter chip row (works with topic, region and time filters, URL-based `?lean=`). Added `lib/compare.ts` with `clusterCoverage()`, which groups same-event stories across outlets with 2+ distinct leans (sanity-checked on sample headlines; no UI yet). Lint and build pass.
