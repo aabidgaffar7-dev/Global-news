@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
-import { LEAN_META, LEAN_ORDER } from "@/lib/feeds";
+import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
 import { clusterCoverage } from "@/lib/compare";
 import { getAllStories } from "@/lib/news";
 
@@ -13,9 +13,20 @@ export const metadata: Metadata = {
 
 export const revalidate = 600;
 
-export default async function ComparePage() {
+export default async function ComparePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ lean?: string }>;
+}) {
+  const { lean } = await searchParams;
+  const activeLean = (LEAN_ORDER as string[]).includes(lean ?? "")
+    ? (lean as Lean)
+    : null;
   const stories = await getAllStories();
-  const clusters = clusterCoverage(stories);
+  const allClusters = clusterCoverage(stories);
+  const clusters = activeLean
+    ? allClusters.filter((c) => c.leans.includes(activeLean))
+    : allClusters;
 
   return (
     <div className="min-h-screen text-slate-200">
@@ -35,10 +46,32 @@ export default async function ComparePage() {
           </p>
         </header>
 
+        {allClusters.length > 0 && (
+          <nav
+            aria-label="Filter by lean"
+            className="mt-8 flex flex-wrap justify-center gap-2"
+          >
+            <Pill href="/compare" active={!activeLean}>
+              All leans
+            </Pill>
+            {LEAN_ORDER.map((l) => (
+              <Pill
+                key={l}
+                href={`/compare?lean=${l}`}
+                active={activeLean === l}
+                color={LEAN_META[l].color}
+              >
+                {LEAN_META[l].label}
+              </Pill>
+            ))}
+          </nav>
+        )}
+
         {clusters.length === 0 ? (
           <p className="glass mt-10 rounded-2xl p-6 text-center text-slate-400">
-            No stories are being covered from multiple vantage points right
-            now. Check back soon.
+            {activeLean
+              ? `No multi-lean stories include ${LEAN_META[activeLean].label} outlets right now.`
+              : "No stories are being covered from multiple vantage points right now. Check back soon."}
           </p>
         ) : (
           <div className="mt-10 space-y-5">
@@ -56,6 +89,14 @@ export default async function ComparePage() {
                   <span className="text-slate-500">
                     {c.stories.length} outlets · {c.leans.length} leans
                   </span>
+                  {c.keywords.length > 0 && (
+                    <Link
+                      href={`/search?q=${encodeURIComponent(c.keywords.join(" "))}`}
+                      className="ml-auto text-cyan-300/80 transition hover:text-cyan-300"
+                    >
+                      Search this topic →
+                    </Link>
+                  )}
                 </div>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   {LEAN_ORDER.filter((l) => c.leans.includes(l)).map((lean) => (
@@ -95,5 +136,35 @@ export default async function ComparePage() {
         )}
       </main>
     </div>
+  );
+}
+
+function Pill({
+  href,
+  active,
+  color,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  color?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`rounded-full border px-3 py-1.5 text-sm transition ${
+        active
+          ? "border-transparent bg-white/10 text-white"
+          : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+      }`}
+      style={
+        active && color
+          ? { boxShadow: `inset 0 0 0 1px ${color}66`, color }
+          : undefined
+      }
+    >
+      {children}
+    </Link>
   );
 }
