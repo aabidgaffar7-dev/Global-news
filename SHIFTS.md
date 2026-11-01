@@ -25,10 +25,12 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 3. Re-add Korea and Turkey outlets with working feed URLs (Korea Herald and Hurriyet were dropped for 0 items) and test candidates with `check-feeds.mjs` (proposed; needs Aabid's PC to test).
 7. Add a "Report a broken feed" link on `/source/[id]` for outlets showing no stories (needs a destination: an email address or GitHub issues link from Aabid; `/api/health` is done) (proposed).
 11. Add a "Report a broken feed" or "Suggest an outlet" form once Aabid picks a destination (proposed).
-12. Add a lean/region filter and a topic-keyword link from each `/compare` cluster to a search for that topic (proposed).
 13. Tune `clusterCoverage()` thresholds against live data and show a "how this was grouped" note on `/compare` (proposed).
 17. Add a lean-balance badge to each `/compare` cluster (e.g. "left-leaning headlines use X, right use Y" shared-word diff) (proposed).
-18. Add an "Open Graph image" per article/outlet page for nicer link sharing (proposed).
+19. Add a region filter chip row to `/compare` (clusters where any story is from that region) (proposed).
+20. Add a per-category Open Graph image (category name + top story count) for `app/category/[slug]` (proposed).
+21. Add a "Copy link / Share" button to `/compare` clusters and article pages using the Web Share API with a clipboard fallback (proposed).
+22. Add JSON-LD `NewsArticle`/`Organization` structured data on article and `/source/[id]` pages (see node_modules/next/dist/docs/01-app/02-guides/json-ld.md) (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
 Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle East, Africa, SE Asia, Latin America and Korea/Turkey. Suggested leans are only a starting point.
@@ -47,6 +49,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-11-01 (shift 15): `/compare` now has a lean filter chip row (URL-based `?lean=`, with an empty state) and each cluster has a "Search this topic" link into `/search`. Added a per-outlet Open Graph share card at `/source/[id]/opengraph-image` (name, city, lean). Article pages already had their own OG image. Lint and build pass.
 - 2026-10-31 (shift 14): Added per-category RSS feeds at `/category/[slug]/feed.xml` (top 30 stories, auto-discovery link in the page head plus a visible "RSS feed" link). Shared the RSS builder in `lib/rss.ts` (used by `/feed.xml` too). Only one task this shift (other unblocked items are speculative). Lint and build pass.
 - 2026-10-30 (shift 13): Added `/feed.xml`, an RSS 2.0 feed of the top 30 stories (linked in the footer and page head for feed readers). Home page now shows a strip of the top 3 multi-lean coverage clusters linking to `/compare`. Lint and build pass.
 - 2026-10-29 (shift 12): New `/compare` page: topic clusters with headlines side by side, grouped by lean, linked from the footer, mobile menu and sitemap. Article pages show a "Covered by N outlets across M leans" chip linking to it when the story is in a cluster. Lint and build pass (sandbox offline, so clusters only appear with live data).
