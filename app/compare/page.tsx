@@ -4,6 +4,7 @@ import SiteHeader from "@/components/SiteHeader";
 import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
 import { clusterCoverage } from "@/lib/compare";
 import { getAllStories } from "@/lib/news";
+import { REGIONS, regionOf } from "@/lib/regions";
 
 export const metadata: Metadata = {
   title: "Compare coverage",
@@ -16,17 +17,29 @@ export const revalidate = 600;
 export default async function ComparePage({
   searchParams,
 }: {
-  searchParams: Promise<{ lean?: string }>;
+  searchParams: Promise<{ lean?: string; region?: string }>;
 }) {
-  const { lean } = await searchParams;
+  const { lean, region } = await searchParams;
+  const activeRegion = REGIONS.find((r) => r === region) ?? null;
   const activeLean = (LEAN_ORDER as string[]).includes(lean ?? "")
     ? (lean as Lean)
     : null;
   const stories = await getAllStories();
   const allClusters = clusterCoverage(stories);
-  const clusters = activeLean
-    ? allClusters.filter((c) => c.leans.includes(activeLean))
-    : allClusters;
+  const clusters = allClusters
+    .filter((c) => (activeLean ? c.leans.includes(activeLean) : true))
+    .filter((c) =>
+      activeRegion
+        ? c.stories.some((s) => regionOf(s.country) === activeRegion)
+        : true,
+    );
+  const href = (l: Lean | null, r: string | null) => {
+    const q = new URLSearchParams();
+    if (l) q.set("lean", l);
+    if (r) q.set("region", r);
+    const str = q.toString();
+    return str ? `/compare?${str}` : "/compare";
+  };
 
   return (
     <div className="min-h-screen text-slate-200">
@@ -51,13 +64,13 @@ export default async function ComparePage({
             aria-label="Filter by lean"
             className="mt-8 flex flex-wrap justify-center gap-2"
           >
-            <Pill href="/compare" active={!activeLean}>
+            <Pill href={href(null, activeRegion)} active={!activeLean}>
               All leans
             </Pill>
             {LEAN_ORDER.map((l) => (
               <Pill
                 key={l}
-                href={`/compare?lean=${l}`}
+                href={href(l, activeRegion)}
                 active={activeLean === l}
                 color={LEAN_META[l].color}
               >
@@ -67,10 +80,26 @@ export default async function ComparePage({
           </nav>
         )}
 
+        {allClusters.length > 0 && (
+          <nav
+            aria-label="Filter by region"
+            className="mt-3 flex flex-wrap justify-center gap-2"
+          >
+            <Pill href={href(activeLean, null)} active={!activeRegion}>
+              All regions
+            </Pill>
+            {REGIONS.map((r) => (
+              <Pill key={r} href={href(activeLean, r)} active={activeRegion === r}>
+                {r}
+              </Pill>
+            ))}
+          </nav>
+        )}
+
         {clusters.length === 0 ? (
           <p className="glass mt-10 rounded-2xl p-6 text-center text-slate-400">
-            {activeLean
-              ? `No multi-lean stories include ${LEAN_META[activeLean].label} outlets right now.`
+            {activeLean || activeRegion
+              ? "No multi-lean stories match these filters right now."
               : "No stories are being covered from multiple vantage points right now. Check back soon."}
           </p>
         ) : (
