@@ -1,3 +1,4 @@
+import { jsonLdString } from "@/lib/jsonld";
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
@@ -157,6 +158,22 @@ export default async function ArticlePage({
     <div className="min-h-screen text-slate-200">
       <SiteHeader />
       {/* One view per session, crawler-filtered — feeds the popularity engine */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLdString({
+            "@context": "https://schema.org",
+            "@type": "NewsArticle",
+            headline: story.title,
+            datePublished: story.publishedAt,
+            ...(story.imageUrl ? { image: [story.imageUrl] } : {}),
+            ...(story.summary ? { description: story.summary.slice(0, 300) } : {}),
+            mainEntityOfPage: story.link,
+            author: { "@type": "Organization", name: story.source },
+            publisher: { "@type": "Organization", name: story.source },
+          }),
+        }}
+      />
       <ViewPing link={story.link} title={story.title} source={story.source} />
       <main id="main-content" className="mx-auto max-w-3xl px-5 pb-24 pt-8">
         <div className="flex items-center justify-between gap-3">

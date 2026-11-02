@@ -1,3 +1,4 @@
+import { jsonLdString } from "@/lib/jsonld";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
@@ -55,6 +56,22 @@ export default async function SourcePage({
   return (
     <div className="min-h-screen text-slate-200">
       <SiteHeader />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLdString({
+            "@context": "https://schema.org",
+            "@type": "NewsMediaOrganization",
+            name: feed.name,
+            url: new URL(feed.url).origin,
+            address: {
+              "@type": "PostalAddress",
+              addressLocality: feed.city,
+              addressCountry: feed.country,
+            },
+          }),
+        }}
+      />
       <main id="main-content" className="mx-auto max-w-6xl px-5 pb-24 pt-8">
         <Link
           href="/sources"
