@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import SiteFooter from "@/components/SiteFooter";
+import BackToTop from "@/components/BackToTop";
 import { BRAND_NAME } from "@/lib/brand";
 
 const inter = Inter({
@@ -50,6 +51,7 @@ export default function RootLayout({
         <div className="cosmos-bg" aria-hidden />
         {children}
         <SiteFooter />
+        <BackToTop />
       </body>
     </html>
   );

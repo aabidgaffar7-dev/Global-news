@@ -28,11 +28,9 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 13. Tune `clusterCoverage()` thresholds against live data and show a "how this was grouped" note on `/compare` (proposed).
 17. Add a lean-balance badge to each `/compare` cluster (e.g. "left-leaning headlines use X, right use Y" shared-word diff) (proposed).
 20. Add a per-category Open Graph image (category name + top story count) for `app/category/[slug]` (proposed).
-21. Add a "Copy link / Share" button to `/compare` clusters and article pages using the Web Share API with a clipboard fallback (proposed).
-
-23. Add a "Save/bookmark story" button using localStorage with a `/saved` page (proposed).
-24. Add a "Back to top" / keyboard shortcut polish and a skip-to-filters link on long pages (proposed).
 25. Add Africa/Middle East outlets to the lean-balance diff on `/compare` clusters, after #17 (proposed).
+26. Add a Save button to `/compare` cluster stories and a "Saved" count badge in the header (proposed).
+27. Show reading-time estimate on story cards from summary length (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
 Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle East, Africa, SE Asia, Latin America and Korea/Turkey. Suggested leans are only a starting point.
@@ -51,6 +49,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-11-03 (shift 17): Added a Share button to each `/compare` cluster (shares a `/search` link for the topic) and a floating "Back to top" button site-wide. Save/bookmark (`/saved`), article Share and skip-to-content already existed, so those backlog items were closed. Two tasks, lint and build pass.
 - 2026-11-02 (shift 16): `/compare` now has a region chip row that combines with the lean filter (URL `?region=`). Article pages emit `NewsArticle` JSON-LD and `/source/[id]` emits `NewsMediaOrganization` JSON-LD (shared `lib/jsonld.ts`, `<` escaped). Two tasks, lint and build pass.
 - 2026-11-01 (shift 15): `/compare` now has a lean filter chip row (URL-based `?lean=`, with an empty state) and each cluster has a "Search this topic" link into `/search`. Added a per-outlet Open Graph share card at `/source/[id]/opengraph-image` (name, city, lean). Article pages already had their own OG image. Lint and build pass.
 - 2026-10-31 (shift 14): Added per-category RSS feeds at `/category/[slug]/feed.xml` (top 30 stories, auto-discovery link in the page head plus a visible "RSS feed" link). Shared the RSS builder in `lib/rss.ts` (used by `/feed.xml` too). Only one task this shift (other unblocked items are speculative). Lint and build pass.
