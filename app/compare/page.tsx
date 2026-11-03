@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ShareButton from "@/components/ShareButton";
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
 import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
@@ -125,6 +126,13 @@ export default async function ComparePage({
                     >
                       Search this topic →
                     </Link>
+                  )}
+                  {c.keywords.length > 0 && (
+                    <ShareButton
+                      compact
+                      title={`How outlets cover: ${c.keywords.join(" ")}`}
+                      path={`/search?q=${encodeURIComponent(c.keywords.join(" "))}`}
+                    />
                   )}
                 </div>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
