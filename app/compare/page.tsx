@@ -3,7 +3,7 @@ import ShareButton from "@/components/ShareButton";
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
 import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
-import { clusterCoverage } from "@/lib/compare";
+import { clusterCoverage, leanWordDiff } from "@/lib/compare";
 import { getAllStories } from "@/lib/news";
 import { REGIONS, regionOf } from "@/lib/regions";
 
@@ -167,6 +167,23 @@ export default async function ComparePage({
                     </div>
                   ))}
                 </div>
+                {(() => {
+                  const diff = leanWordDiff(c).filter((d) => d.words.length > 0);
+                  if (diff.length < 2) return null;
+                  return (
+                    <div className="mt-5 border-t border-white/5 pt-4 text-xs text-slate-400">
+                      <span className="text-slate-500">Words only this side used: </span>
+                      {LEAN_ORDER.map((l) => diff.find((d) => d.lean === l)).filter(Boolean).map((d) => (
+                        <span key={d!.lean} className="mr-3 inline-block">
+                          <span style={{ color: LEAN_META[d!.lean].color }}>
+                            {LEAN_META[d!.lean].label}
+                          </span>{" "}
+                          <span className="capitalize">{d!.words.join(", ")}</span>
+                        </span>
+                      ))}
+                    </div>
+                  );
+                })()}
               </section>
             ))}
           </div>

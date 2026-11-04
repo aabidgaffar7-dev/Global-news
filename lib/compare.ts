@@ -90,3 +90,33 @@ export function clusterCoverage(
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 }
+
+/**
+ * For each lean in a cluster, the headline words only that lean's outlets
+ * used (not any other lean's), minus the words that define the cluster.
+ * Shows how framing differs. Empty array for a lean means no unique words.
+ */
+export function leanWordDiff(
+  cluster: CoverageCluster,
+  perLean = 3,
+): { lean: Lean; words: string[] }[] {
+  const byLean = new Map<Lean, Map<string, number>>();
+  for (const s of cluster.stories) {
+    const m = byLean.get(s.lean) ?? new Map<string, number>();
+    for (const w of topicKeywords(s.title)) m.set(w, (m.get(w) ?? 0) + 1);
+    byLean.set(s.lean, m);
+  }
+  const skip = new Set(cluster.keywords);
+  return [...byLean.entries()].map(([lean, words]) => {
+    const unique = [...words.entries()]
+      .filter(
+        ([w]) =>
+          !skip.has(w) &&
+          ![...byLean.entries()].some(([l, m]) => l !== lean && m.has(w)),
+      )
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, perLean)
+      .map(([w]) => w);
+    return { lean, words: unique };
+  });
+}
