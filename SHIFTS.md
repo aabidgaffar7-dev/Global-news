@@ -26,11 +26,12 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 7. Add a "Report a broken feed" link on `/source/[id]` for outlets showing no stories (needs a destination: an email address or GitHub issues link from Aabid; `/api/health` is done) (proposed).
 11. Add a "Report a broken feed" or "Suggest an outlet" form once Aabid picks a destination (proposed).
 13. Tune `clusterCoverage()` thresholds against live data and show a "how this was grouped" note on `/compare` (proposed).
-17. Add a lean-balance badge to each `/compare` cluster (e.g. "left-leaning headlines use X, right use Y" shared-word diff) (proposed).
-20. Add a per-category Open Graph image (category name + top story count) for `app/category/[slug]` (proposed).
 25. Add Africa/Middle East outlets to the lean-balance diff on `/compare` clusters, after #17 (proposed).
 26. Add a Save button to `/compare` cluster stories and a "Saved" count badge in the header (proposed).
-27. Show reading-time estimate on story cards from summary length (proposed).
+28. Add an "Africa outlets" shortlist (see #2) as a ready-to-approve table in this file with feed URLs (proposed).
+29. Add a "Most compared" sort toggle on `/compare` (by outlets vs by score) (proposed).
+30. Show lean-diff words as links into `/search` on `/compare` (proposed).
+27. Show reading-time (note: RSS summaries are short snippets, so the estimate may be misleading; consider dropping) estimate on story cards from summary length (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
 Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle East, Africa, SE Asia, Latin America and Korea/Turkey. Suggested leans are only a starting point.
@@ -49,6 +50,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-11-04 (shift 18): `/compare` clusters now show "words only this side used" per lean (new `leanWordDiff()` in `lib/compare.ts`), and category pages have their own Open Graph share card (name, description, live story count). Two tasks, lint and build pass.
 - 2026-11-03 (shift 17): Added a Share button to each `/compare` cluster (shares a `/search` link for the topic) and a floating "Back to top" button site-wide. Save/bookmark (`/saved`), article Share and skip-to-content already existed, so those backlog items were closed. Two tasks, lint and build pass.
 - 2026-11-02 (shift 16): `/compare` now has a region chip row that combines with the lean filter (URL `?region=`). Article pages emit `NewsArticle` JSON-LD and `/source/[id]` emits `NewsMediaOrganization` JSON-LD (shared `lib/jsonld.ts`, `<` escaped). Two tasks, lint and build pass.
 - 2026-11-01 (shift 15): `/compare` now has a lean filter chip row (URL-based `?lean=`, with an empty state) and each cluster has a "Search this topic" link into `/search`. Added a per-outlet Open Graph share card at `/source/[id]/opengraph-image` (name, city, lean). Article pages already had their own OG image. Lint and build pass.
