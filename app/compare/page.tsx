@@ -18,9 +18,10 @@ export const revalidate = 600;
 export default async function ComparePage({
   searchParams,
 }: {
-  searchParams: Promise<{ lean?: string; region?: string }>;
+  searchParams: Promise<{ lean?: string; region?: string; sort?: string }>;
 }) {
-  const { lean, region } = await searchParams;
+  const { lean, region, sort } = await searchParams;
+  const activeSort = sort === "outlets" ? "outlets" : "score";
   const activeRegion = REGIONS.find((r) => r === region) ?? null;
   const activeLean = (LEAN_ORDER as string[]).includes(lean ?? "")
     ? (lean as Lean)
@@ -34,8 +35,18 @@ export default async function ComparePage({
         ? c.stories.some((s) => regionOf(s.country) === activeRegion)
         : true,
     );
-  const href = (l: Lean | null, r: string | null) => {
+  if (activeSort === "outlets") {
+    clusters.sort(
+      (a, b) => b.stories.length - a.stories.length || b.score - a.score,
+    );
+  }
+  const href = (
+    l: Lean | null,
+    r: string | null,
+    so: string = activeSort,
+  ) => {
     const q = new URLSearchParams();
+    if (so === "outlets") q.set("sort", "outlets");
     if (l) q.set("lean", l);
     if (r) q.set("region", r);
     const str = q.toString();
@@ -94,6 +105,21 @@ export default async function ComparePage({
                 {r}
               </Pill>
             ))}
+          </nav>
+        )}
+
+        {allClusters.length > 0 && (
+          <nav
+            aria-label="Sort clusters"
+            className="mt-3 flex flex-wrap items-center justify-center gap-2"
+          >
+            <span className="text-xs text-slate-500">Sort by</span>
+            <Pill href={href(activeLean, activeRegion, "score")} active={activeSort === "score"}>
+              Top score
+            </Pill>
+            <Pill href={href(activeLean, activeRegion, "outlets")} active={activeSort === "outlets"}>
+              Most outlets
+            </Pill>
           </nav>
         )}
 
@@ -178,7 +204,17 @@ export default async function ComparePage({
                           <span style={{ color: LEAN_META[d!.lean].color }}>
                             {LEAN_META[d!.lean].label}
                           </span>{" "}
-                          <span className="capitalize">{d!.words.join(", ")}</span>
+                          {d!.words.map((w, i) => (
+                            <span key={w}>
+                              <Link
+                                href={`/search?q=${encodeURIComponent(w)}`}
+                                className="capitalize transition hover:text-cyan-300 hover:underline"
+                              >
+                                {w}
+                              </Link>
+                              {i < d!.words.length - 1 ? ", " : ""}
+                            </span>
+                          ))}
                         </span>
                       ))}
                     </div>
