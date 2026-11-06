@@ -19,7 +19,7 @@ import {
   type Category,
 } from "@/lib/categories";
 import { REGIONS, regionOf } from "@/lib/regions";
-import { clusterCoverage, trendingTopics } from "@/lib/compare";
+import { clusterCoverage, isOpinion, trendingTopics } from "@/lib/compare";
 import { LEAN_META } from "@/lib/feeds";
 import { timeAgo } from "@/lib/format";
 
@@ -28,14 +28,23 @@ export const revalidate = 600;
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ region?: string }>;
+  searchParams: Promise<{ region?: string; opinion?: string }>;
 }) {
-  const { region } = await searchParams;
+  const { region, opinion } = await searchParams;
+  const hideOpinion = opinion === "hide";
   const activeRegion = REGIONS.find((r) => r === region) ?? null;
   const stories = await getAllStories();
+  const visible = hideOpinion ? stories.filter((s) => !isOpinion(s)) : stories;
   const regionStories = activeRegion
-    ? stories.filter((s) => regionOf(s.country) === activeRegion)
-    : stories;
+    ? visible.filter((s) => regionOf(s.country) === activeRegion)
+    : visible;
+  const qs = (r: string | null, hide: boolean) => {
+    const p = new URLSearchParams();
+    if (r) p.set("region", r);
+    if (hide) p.set("opinion", "hide");
+    const q = p.toString();
+    return q ? `/?${q}` : "/";
+  };
   const clusters = clusterCoverage(stories, { limit: 3 });
   const topics = trendingTopics(stories);
   const active = globeLocations(stories).filter((l) => l.storyCount > 0);
@@ -104,7 +113,7 @@ export default async function Home({
           {[null, ...REGIONS].map((r) => (
             <Link
               key={r ?? "all"}
-              href={r ? `/?region=${encodeURIComponent(r)}` : "/"}
+              href={qs(r, hideOpinion)}
               aria-current={activeRegion === r ? "true" : undefined}
               className={`rounded-full border px-3 py-1.5 text-sm transition ${
                 activeRegion === r
@@ -115,6 +124,17 @@ export default async function Home({
               {r ? `🌍 ${r}` : "All regions"}
             </Link>
           ))}
+          <Link
+            href={qs(activeRegion, !hideOpinion)}
+            aria-pressed={hideOpinion}
+            className={`ml-auto rounded-full border px-3 py-1.5 text-sm transition ${
+              hideOpinion
+                ? "border-transparent bg-white/10 text-white"
+                : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+            }`}
+          >
+            {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
+          </Link>
         </nav>
 
         {topics.length > 0 && (

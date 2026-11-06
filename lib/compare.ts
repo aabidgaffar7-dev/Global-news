@@ -143,3 +143,10 @@ export function trendingTopics(
     .sort((a, b) => b.outlets - a.outlets || a.word.localeCompare(b.word))
     .slice(0, limit);
 }
+
+/** Heuristic: does this story look like an opinion/editorial piece? */
+export function isOpinion(s: Pick<Story, "link" | "title">): boolean {
+  if (/\/(opinions?|editorials?|commentary|columns?|op-ed|analysis-and-opinion)\//i.test(s.link))
+    return true;
+  return /^(opinion|editorial|comment|column|op-ed|analysis)\s*[:|–—-]/i.test(s.title.trim());
+}

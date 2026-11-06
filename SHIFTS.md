@@ -29,10 +29,11 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 25. Add Africa/Middle East outlets to the lean-balance diff on `/compare` clusters, after #17 (proposed).
 26. Add a Save button to `/compare` cluster stories and a "Saved" count badge in the header. Note: `/compare` is ISR (revalidate 600), so per-user saved state needs a client-side fetch or dynamic rendering (proposed).
 31. Add a "Saved" count badge in the header/user menu (proposed).
-32. Add a "Hide opinion pieces" toggle using title/URL heuristics (e.g. /opinion/ paths) (proposed).
-33. Show a "Trending topics" chip row on the home page from the top `clusterCoverage()` keywords (proposed).
 28. Add an "Africa outlets" shortlist (see #2) as a ready-to-approve table in this file with feed URLs (proposed).
 27. Show reading-time (note: RSS summaries are short snippets, so the estimate may be misleading; consider dropping) estimate on story cards from summary length (proposed).
+
+34. Carry the "Hide opinion" setting to `/popular`, search and category pages, or remember it per reader (proposed).
+35. Add a `/topic/[word]` page for each trending chip (stories plus lean breakdown) instead of linking to plain search (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
 Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle East, Africa, SE Asia, Latin America and Korea/Turkey. Suggested leans are only a starting point.
@@ -51,6 +52,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-11-06 (shift 20): Home page has a "Trending" topic chip row (words headlined by 3+ outlets, links to search) and a "Hide opinion" toggle (URL `?opinion=hide`, combines with region; title/URL heuristics in `isOpinion()`). Two tasks, lint and build pass.
 - 2026-11-05 (shift 19): `/compare` has a "Sort by: Top score / Most outlets" toggle (URL `?sort=outlets`, combines with lean/region) and the lean-diff words now link into `/search`. Skipped the Save button on `/compare` (page is cached, so per-user state doesn't fit cleanly). Two tasks, lint and build pass.
 - 2026-11-04 (shift 18): `/compare` clusters now show "words only this side used" per lean (new `leanWordDiff()` in `lib/compare.ts`), and category pages have their own Open Graph share card (name, description, live story count). Two tasks, lint and build pass.
 - 2026-11-03 (shift 17): Added a Share button to each `/compare` cluster (shares a `/search` link for the topic) and a floating "Back to top" button site-wide. Save/bookmark (`/saved`), article Share and skip-to-content already existed, so those backlog items were closed. Two tasks, lint and build pass.
