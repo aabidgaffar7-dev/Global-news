@@ -19,7 +19,7 @@ import {
   type Category,
 } from "@/lib/categories";
 import { REGIONS, regionOf } from "@/lib/regions";
-import { clusterCoverage } from "@/lib/compare";
+import { clusterCoverage, trendingTopics } from "@/lib/compare";
 import { LEAN_META } from "@/lib/feeds";
 import { timeAgo } from "@/lib/format";
 
@@ -37,6 +37,7 @@ export default async function Home({
     ? stories.filter((s) => regionOf(s.country) === activeRegion)
     : stories;
   const clusters = clusterCoverage(stories, { limit: 3 });
+  const topics = trendingTopics(stories);
   const active = globeLocations(stories).filter((l) => l.storyCount > 0);
   const activeCities = active.length;
   const countries = new Set(active.map((l) => l.country)).size;
@@ -115,6 +116,27 @@ export default async function Home({
             </Link>
           ))}
         </nav>
+
+        {topics.length > 0 && (
+          <nav
+            aria-label="Trending topics"
+            className="mt-4 flex flex-wrap items-center gap-2"
+          >
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Trending
+            </span>
+            {topics.map((t) => (
+              <Link
+                key={t.word}
+                href={`/search?q=${encodeURIComponent(t.word)}`}
+                title={`${t.outlets} outlets are covering this`}
+                className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-sm capitalize text-slate-300 transition hover:bg-white/[0.07]"
+              >
+                {t.word}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         <div className="mt-6">
           {regionStories.length === 0 ? (

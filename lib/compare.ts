@@ -120,3 +120,26 @@ export function leanWordDiff(
     return { lean, words: unique };
   });
 }
+
+/**
+ * Words that many different outlets are headlining right now, for a
+ * "Trending topics" chip row. Counts each word once per outlet.
+ */
+export function trendingTopics(
+  stories: Story[],
+  { limit = 8, minOutlets = 3, window = 80 } = {},
+): { word: string; outlets: number }[] {
+  const byWord = new Map<string, Set<string>>();
+  for (const s of stories.slice(0, window)) {
+    for (const w of topicKeywords(s.title)) {
+      const set = byWord.get(w) ?? new Set<string>();
+      set.add(s.sourceId);
+      byWord.set(w, set);
+    }
+  }
+  return [...byWord.entries()]
+    .filter(([, o]) => o.size >= minOutlets)
+    .map(([word, o]) => ({ word, outlets: o.size }))
+    .sort((a, b) => b.outlets - a.outlets || a.word.localeCompare(b.word))
+    .slice(0, limit);
+}
