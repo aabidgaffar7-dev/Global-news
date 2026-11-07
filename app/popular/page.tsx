@@ -12,6 +12,7 @@ import {
 } from "@/lib/categories";
 import { LEAN_META, type Lean } from "@/lib/feeds";
 import { REGIONS, regionOf } from "@/lib/regions";
+import { isOpinion } from "@/lib/compare";
 import { formatCount, storyPlace, timeAgo } from "@/lib/format";
 
 export const revalidate = 600;
@@ -42,9 +43,10 @@ const LEAN_ORDER: Lean[] = [
 export default async function PopularPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cat?: string; when?: string; region?: string; lean?: string }>;
+  searchParams: Promise<{ cat?: string; when?: string; region?: string; lean?: string; opinion?: string }>;
 }) {
-  const { cat, when, region, lean } = await searchParams;
+  const { cat, when, region, lean, opinion } = await searchParams;
+  const hideOpinion = opinion === "hide";
   const activeCat = (DISPLAY_CATEGORIES as string[]).includes(cat ?? "")
     ? (cat as Category)
     : null;
@@ -72,6 +74,7 @@ export default async function PopularPage({
     .filter((s) => (activeCat ? s.category === activeCat : true))
     .filter((s) => (activeRegion ? regionOf(s.country) === activeRegion : true))
     .filter((s) => (activeLean ? s.lean === activeLean : true))
+    .filter((s) => !hideOpinion || !isOpinion(s))
     .filter(
       (s) =>
         win.hours === Infinity ||
@@ -86,12 +89,15 @@ export default async function PopularPage({
     when?: string;
     region?: string | null;
     lean?: string | null;
+    opinion?: boolean;
   }) => {
     const c = next.cat !== undefined ? next.cat : activeCat;
     const w = next.when !== undefined ? next.when : win.key;
     const r = next.region !== undefined ? next.region : activeRegion;
     const l = next.lean !== undefined ? next.lean : activeLean;
+    const o = next.opinion !== undefined ? next.opinion : hideOpinion;
     const params = new URLSearchParams();
+    if (o) params.set("opinion", "hide");
     if (l) params.set("lean", l);
     if (c) params.set("cat", c);
     if (r) params.set("region", r);
@@ -183,6 +189,12 @@ export default async function PopularPage({
                 {w.label}
               </FilterPill>
             ))}
+            <FilterPill
+              href={qp({ opinion: !hideOpinion })}
+              active={hideOpinion}
+            >
+              {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
+            </FilterPill>
           </div>
         </div>
 
