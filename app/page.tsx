@@ -148,7 +148,7 @@ export default async function Home({
             {topics.map((t) => (
               <Link
                 key={t.word}
-                href={`/search?q=${encodeURIComponent(t.word)}`}
+                href={`/topic/${encodeURIComponent(t.word)}`}
                 title={`${t.outlets} outlets are covering this`}
                 className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-sm capitalize text-slate-300 transition hover:bg-white/[0.07]"
               >
