@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import StoryImage from "@/components/StoryImage";
 import { LEAN_META } from "@/lib/feeds";
+import { REGIONS, regionOf } from "@/lib/regions";
 import { storyPlace, timeAgo } from "@/lib/format";
 import type { Story } from "@/lib/news";
 
@@ -22,7 +23,21 @@ export default function CategoryArticles({
 }) {
   const [sort, setSort] = useState<"popular" | "latest">("popular");
   const [shown, setShown] = useState(PAGE);
-  const sorted = [...articles].sort((a, b) =>
+  const [region, setRegion] = useState("all");
+  const regionCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const a of articles) {
+      const r = regionOf(a.country);
+      m.set(r, (m.get(r) ?? 0) + 1);
+    }
+    return m;
+  }, [articles]);
+  const regions = REGIONS.filter((r) => regionCounts.has(r));
+  const pool =
+    region === "all"
+      ? articles
+      : articles.filter((a) => regionOf(a.country) === region);
+  const sorted = [...pool].sort((a, b) =>
     sort === "latest"
       ? new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
       : b.score - a.score,
@@ -59,10 +74,34 @@ export default function CategoryArticles({
         </div>
       </div>
 
+      {regions.length > 1 && (
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {["all", ...regions].map((r) => (
+            <button
+              key={r}
+              onClick={() => {
+                setRegion(r);
+                setShown(PAGE);
+              }}
+              className={`rounded-full border px-2.5 py-1 text-xs transition ${
+                region === r
+                  ? "border-transparent bg-white/10 text-white"
+                  : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+              }`}
+            >
+              {r === "all"
+                ? "All regions"
+                : `🌍 ${r} · ${regionCounts.get(r)}`}
+            </button>
+          ))}
+        </div>
+      )}
+
       {sorted.length === 0 ? (
         <p className="glass rounded-xl p-8 text-center text-slate-400">
-          No {label.toLowerCase()} stories in the feed right now — check back
-          soon.
+          {articles.length > 0
+            ? `No ${label.toLowerCase()} stories from this region right now.`
+            : `No ${label.toLowerCase()} stories in the feed right now — check back soon.`}
         </p>
       ) : (
         <>

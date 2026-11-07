@@ -28,7 +28,13 @@ export async function generateMetadata({
     ? CATEGORY_META[slug as Category]
     : null;
   if (!meta) return { title: "Category" };
-  return { title: `${meta.label} News`, description: meta.description };
+  return {
+    title: `${meta.label} News`,
+    description: meta.description,
+    alternates: {
+      types: { "application/rss+xml": `/category/${slug}/feed.xml` },
+    },
+  };
 }
 
 export default async function CategoryPage({
@@ -82,6 +88,12 @@ export default async function CategoryPage({
         <div className="mt-4 flex flex-wrap gap-5 text-sm text-slate-400">
           <span>📰 {articles.length} Articles</span>
           <span>⭐ {rankedSources.length} Sources</span>
+          <a
+            href={`/category/${category}/feed.xml`}
+            className="hover:text-white"
+          >
+            📡 RSS feed
+          </a>
         </div>
 
         {topSources.length > 0 && (

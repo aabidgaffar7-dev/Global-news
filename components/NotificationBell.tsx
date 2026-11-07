@@ -26,6 +26,7 @@ export default function NotificationBell() {
     const stored = Number(localStorage.getItem(SEEN_KEY) ?? 0);
     // First visit: baseline to "now" so we don't flood a newcomer with unread.
     if (!stored) localStorage.setItem(SEEN_KEY, String(Date.now()));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is only readable after mount (SSR-safe)
     setLastSeen(stored || Date.now());
     fetch("/api/recent")
       .then((r) => r.json())
