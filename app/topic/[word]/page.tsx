@@ -4,7 +4,8 @@ import SiteHeader from "@/components/SiteHeader";
 import CategoryArticles from "@/components/CategoryArticles";
 import TrendingLeanBar from "@/components/TrendingLeanBar";
 import { getAllStories } from "@/lib/news";
-import { topicKeywords } from "@/lib/compare";
+import { isOpinion, topicKeywords } from "@/lib/compare";
+import { REGIONS, regionOf } from "@/lib/regions";
 
 export const revalidate = 600;
 
@@ -27,15 +28,37 @@ export async function generateMetadata({
 
 export default async function TopicPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ word: string }>;
+  searchParams: Promise<{ region?: string; opinion?: string }>;
 }) {
   const { word } = await params;
+  const { region, opinion } = await searchParams;
   const w = clean(word);
+  const hideOpinion = opinion === "hide";
+  const activeRegion = REGIONS.find((r) => r === region) ?? null;
   if (!/^[\p{L}\p{N}]{2,40}$/u.test(w)) notFound();
 
   const stories = await getAllStories();
-  const articles = stories.filter((s) => topicKeywords(s.title).has(w));
+  const topical = stories.filter((s) => topicKeywords(s.title).has(w));
+  const base = hideOpinion ? topical.filter((s) => !isOpinion(s)) : topical;
+  const articles = activeRegion
+    ? base.filter((s) => regionOf(s.country) === activeRegion)
+    : base;
+  const href = (r: string | null, op: boolean) => {
+    const q = new URLSearchParams();
+    if (r) q.set("region", r);
+    if (op) q.set("opinion", "hide");
+    const str = q.toString();
+    return `/topic/${encodeURIComponent(w)}${str ? `?${str}` : ""}`;
+  };
+  const pill = (active: boolean) =>
+    `rounded-full border px-3 py-1.5 text-sm transition ${
+      active
+        ? "border-transparent bg-white/10 text-white"
+        : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+    }`;
   const outlets = new Set(articles.map((s) => s.sourceId)).size;
 
   return (
@@ -62,6 +85,22 @@ export default async function TopicPage({
           </Link>
         </p>
 
+        {(topical.length > 0 || activeRegion || hideOpinion) && (
+          <nav aria-label="Filter stories" className="mt-5 flex flex-wrap gap-2">
+            <Link href={href(null, hideOpinion)} className={pill(!activeRegion)}>
+              All regions
+            </Link>
+            {REGIONS.map((r) => (
+              <Link key={r} href={href(r, hideOpinion)} className={pill(activeRegion === r)}>
+                {r}
+              </Link>
+            ))}
+            <Link href={href(activeRegion, !hideOpinion)} className={pill(hideOpinion)}>
+              {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
+            </Link>
+          </nav>
+        )}
+
         {articles.length > 0 ? (
           <>
             <TrendingLeanBar
@@ -77,7 +116,9 @@ export default async function TopicPage({
           </>
         ) : (
           <p className="mt-10 text-slate-500">
-            No current headlines mention &ldquo;{w}&rdquo;. Try{" "}
+            {activeRegion || hideOpinion
+              ? "No stories match these filters. "
+              : <>No current headlines mention &ldquo;{w}&rdquo;. </>}Try{" "}
             <Link
               href={`/search?q=${encodeURIComponent(w)}`}
               className="text-cyan-300 hover:underline"
