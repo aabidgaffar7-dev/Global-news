@@ -3,7 +3,7 @@ import ShareButton from "@/components/ShareButton";
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
 import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
-import { clusterCoverage, leanWordDiff } from "@/lib/compare";
+import { clusterCoverage, isOpinion, leanWordDiff } from "@/lib/compare";
 import { getAllStories } from "@/lib/news";
 import { REGIONS, regionOf } from "@/lib/regions";
 
@@ -18,15 +18,17 @@ export const revalidate = 600;
 export default async function ComparePage({
   searchParams,
 }: {
-  searchParams: Promise<{ lean?: string; region?: string; sort?: string }>;
+  searchParams: Promise<{ lean?: string; region?: string; sort?: string; opinion?: string }>;
 }) {
-  const { lean, region, sort } = await searchParams;
+  const { lean, region, sort, opinion } = await searchParams;
+  const hideOpinion = opinion === "hide";
   const activeSort = sort === "outlets" ? "outlets" : "score";
   const activeRegion = REGIONS.find((r) => r === region) ?? null;
   const activeLean = (LEAN_ORDER as string[]).includes(lean ?? "")
     ? (lean as Lean)
     : null;
-  const stories = await getAllStories();
+  const allStories = await getAllStories();
+  const stories = hideOpinion ? allStories.filter((s) => !isOpinion(s)) : allStories;
   const allClusters = clusterCoverage(stories);
   const clusters = allClusters
     .filter((c) => (activeLean ? c.leans.includes(activeLean) : true))
@@ -44,8 +46,10 @@ export default async function ComparePage({
     l: Lean | null,
     r: string | null,
     so: string = activeSort,
+    op: boolean = hideOpinion,
   ) => {
     const q = new URLSearchParams();
+    if (op) q.set("opinion", "hide");
     if (so === "outlets") q.set("sort", "outlets");
     if (l) q.set("lean", l);
     if (r) q.set("region", r);
@@ -108,7 +112,7 @@ export default async function ComparePage({
           </nav>
         )}
 
-        {allClusters.length > 0 && (
+        {(allClusters.length > 0 || hideOpinion) && (
           <nav
             aria-label="Sort clusters"
             className="mt-3 flex flex-wrap items-center justify-center gap-2"
@@ -119,6 +123,12 @@ export default async function ComparePage({
             </Pill>
             <Pill href={href(activeLean, activeRegion, "outlets")} active={activeSort === "outlets"}>
               Most outlets
+            </Pill>
+            <Pill
+              href={href(activeLean, activeRegion, activeSort, !hideOpinion)}
+              active={hideOpinion}
+            >
+              {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
             </Pill>
           </nav>
         )}
