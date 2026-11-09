@@ -27,15 +27,14 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 11. Add a "Report a broken feed" or "Suggest an outlet" form once Aabid picks a destination (proposed).
 13. Tune `clusterCoverage()` thresholds against live data and show a "how this was grouped" note on `/compare` (proposed).
 25. Add Africa/Middle East outlets to the lean-balance diff on `/compare` clusters, after #17 (proposed).
-26. Add a Save button to `/compare` cluster stories and a "Saved" count badge in the header. Note: `/compare` is ISR (revalidate 600), so per-user saved state needs a client-side fetch or dynamic rendering (proposed).
-31. Add a "Saved" count badge in the header/user menu (proposed).
+26. Add a Save button to `/compare` cluster stories. Note: `/compare` is ISR (revalidate 600), so per-user saved state needs a client-side fetch or dynamic rendering (proposed).
 28. Add an "Africa outlets" shortlist (see #2) as a ready-to-approve table in this file with feed URLs (proposed).
 27. Show reading-time (note: RSS summaries are short snippets, so the estimate may be misleading; consider dropping) estimate on story cards from summary length (proposed).
 
+41. Add a topic search box on `/topic` so readers can jump to any word, not just trending ones (proposed).
+42. Show a lean-mix mini bar next to each chip on `/topic` (proposed).
 39. Remember "Hide opinion" per reader (cookie) so it sticks across pages (proposed).
-40. Add a "Related topics" row on `/topic` index (proposed).
 34. Carry "Hide opinion" to search and category pages (client-side filters there), or remember it per reader (proposed).
-36. Add `/topic/[word]` to related-topic links on article pages and a "Related topics" row on `/topic` (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
 Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle East, Africa, SE Asia, Latin America and Korea/Turkey. Suggested leans are only a starting point.
@@ -54,6 +53,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-11-09 (shift 23): New `/topic` index (up to 40 topics headlined by 2+ outlets; linked from the home Trending row and sitemap) and a "Related topics" chip row on `/topic/[word]` (new `relatedTopics()` in `lib/compare.ts`). The account menu's Saved link now shows a count of saved articles. Two tasks, lint and build pass.
 - 2026-11-08 (shift 22): `/compare` got a "Hide opinion" toggle (`?opinion=hide`, combines with lean/region/sort, clusters recomputed without opinion pieces). `/topic/[word]` got region chips and a Hide opinion toggle (page is now server-rendered per request rather than cached). Two tasks, lint and build pass.
 - 2026-11-07 (shift 21): New `/topic/[word]` page (current stories mentioning the word, lean mix bar, outlet count); home Trending chips now link to it. `/popular` got a "Hide opinion" toggle (`?opinion=hide`, combines with other filters). Two tasks, lint and build pass.
 - 2026-11-06 (shift 20): Home page has a "Trending" topic chip row (words headlined by 3+ outlets, links to search) and a "Hide opinion" toggle (URL `?opinion=hide`, combines with region; title/URL heuristics in `isOpinion()`). Two tasks, lint and build pass.
