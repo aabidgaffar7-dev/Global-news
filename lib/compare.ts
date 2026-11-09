@@ -150,3 +150,25 @@ export function isOpinion(s: Pick<Story, "link" | "title">): boolean {
     return true;
   return /^(opinion|editorial|comment|column|op-ed|analysis)\s*[:|–—-]/i.test(s.title.trim());
 }
+
+/**
+ * Words that most often appear in headlines alongside `word`, for a
+ * "Related topics" chip row. Counts each word once per story.
+ */
+export function relatedTopics(
+  stories: Story[],
+  word: string,
+  { limit = 8, minStories = 2 } = {},
+): { word: string; stories: number }[] {
+  const counts = new Map<string, number>();
+  for (const s of stories) {
+    const kw = topicKeywords(s.title);
+    if (!kw.has(word)) continue;
+    for (const w of kw) if (w !== word) counts.set(w, (counts.get(w) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .filter(([, n]) => n >= minStories)
+    .map(([w, n]) => ({ word: w, stories: n }))
+    .sort((a, b) => b.stories - a.stories || a.word.localeCompare(b.word))
+    .slice(0, limit);
+}

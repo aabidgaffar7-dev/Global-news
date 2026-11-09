@@ -4,7 +4,7 @@ import SiteHeader from "@/components/SiteHeader";
 import CategoryArticles from "@/components/CategoryArticles";
 import TrendingLeanBar from "@/components/TrendingLeanBar";
 import { getAllStories } from "@/lib/news";
-import { isOpinion, topicKeywords } from "@/lib/compare";
+import { isOpinion, relatedTopics, topicKeywords } from "@/lib/compare";
 import { REGIONS, regionOf } from "@/lib/regions";
 
 export const revalidate = 600;
@@ -59,6 +59,7 @@ export default async function TopicPage({
         ? "border-transparent bg-white/10 text-white"
         : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
     }`;
+  const related = relatedTopics(stories, w);
   const outlets = new Set(articles.map((s) => s.sourceId)).size;
 
   return (
@@ -97,6 +98,30 @@ export default async function TopicPage({
             ))}
             <Link href={href(activeRegion, !hideOpinion)} className={pill(hideOpinion)}>
               {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
+            </Link>
+          </nav>
+        )}
+
+        {related.length > 0 && (
+          <nav
+            aria-label="Related topics"
+            className="mt-4 flex flex-wrap items-center gap-2"
+          >
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Related
+            </span>
+            {related.map((t) => (
+              <Link
+                key={t.word}
+                href={`/topic/${encodeURIComponent(t.word)}`}
+                title={`appears in ${t.stories} of these headlines`}
+                className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-sm capitalize text-slate-300 transition hover:bg-white/[0.07]"
+              >
+                {t.word}
+              </Link>
+            ))}
+            <Link href="/topic" className="text-sm text-cyan-300 hover:underline">
+              All topics
             </Link>
           </nav>
         )}

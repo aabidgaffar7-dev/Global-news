@@ -155,6 +155,9 @@ export default async function Home({
                 {t.word}
               </Link>
             ))}
+            <Link href="/topic" className="text-sm text-cyan-300 hover:underline">
+              All topics
+            </Link>
           </nav>
         )}
 
