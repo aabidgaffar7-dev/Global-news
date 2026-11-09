@@ -14,6 +14,7 @@ export default function UserMenu() {
   const [email, setEmail] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
+  const [savedCount, setSavedCount] = useState<number | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,6 +33,15 @@ export default function UserMenu() {
     );
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // Refresh the saved count each time the menu opens, so it never goes stale.
+  useEffect(() => {
+    if (!open || !email || !supabaseEnabled) return;
+    getBrowserSupabase()
+      .from("saved")
+      .select("*", { count: "exact", head: true })
+      .then(({ count }) => setSavedCount(count));
+  }, [open, email]);
 
   useEffect(() => {
     if (!open) return;
@@ -96,6 +106,11 @@ export default function UserMenu() {
               className="block rounded-xl px-3 py-2 text-sm text-slate-200 transition hover:bg-white/5"
             >
               {label}
+              {href === "/saved" && savedCount !== null && savedCount > 0 && (
+                <span className="ml-2 rounded-full bg-white/10 px-1.5 py-0.5 text-xs text-slate-300">
+                  {savedCount}
+                </span>
+              )}
             </Link>
           ))}
           <button
