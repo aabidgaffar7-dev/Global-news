@@ -46,6 +46,11 @@ export default async function TopicPage({
   const articles = activeRegion
     ? base.filter((s) => regionOf(s.country) === activeRegion)
     : base;
+  const regionCounts = new Map<string, number>();
+  for (const s of base) {
+    const r = regionOf(s.country);
+    regionCounts.set(r, (regionCounts.get(r) ?? 0) + 1);
+  }
   const href = (r: string | null, op: boolean) => {
     const q = new URLSearchParams();
     if (r) q.set("region", r);
@@ -89,11 +94,19 @@ export default async function TopicPage({
         {(topical.length > 0 || activeRegion || hideOpinion) && (
           <nav aria-label="Filter stories" className="mt-5 flex flex-wrap gap-2">
             <Link href={href(null, hideOpinion)} className={pill(!activeRegion)}>
-              All regions
+              All regions <span className="text-slate-500">{base.length}</span>
             </Link>
-            {REGIONS.map((r) => (
-              <Link key={r} href={href(r, hideOpinion)} className={pill(activeRegion === r)}>
-                {r}
+            {REGIONS.filter(
+              (r) => regionCounts.has(r) || activeRegion === r,
+            ).map((r) => (
+              <Link
+                key={r}
+                href={href(r, hideOpinion)}
+                className={pill(activeRegion === r)}
+                aria-label={`${r}: ${regionCounts.get(r) ?? 0} stories`}
+              >
+                {r}{" "}
+                <span className="text-slate-500">{regionCounts.get(r) ?? 0}</span>
               </Link>
             ))}
             <Link href={href(activeRegion, !hideOpinion)} className={pill(hideOpinion)}>
