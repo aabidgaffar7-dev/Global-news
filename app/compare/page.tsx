@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { OPINION_COOKIE, resolveOpinion } from "@/lib/opinion";
 import ShareButton from "@/components/ShareButton";
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
@@ -21,7 +23,10 @@ export default async function ComparePage({
   searchParams: Promise<{ lean?: string; region?: string; sort?: string; opinion?: string }>;
 }) {
   const { lean, region, sort, opinion } = await searchParams;
-  const hideOpinion = opinion === "hide";
+  const { hide: hideOpinion, paramFor: opinionParam } = resolveOpinion(
+    opinion,
+    (await cookies()).get(OPINION_COOKIE)?.value,
+  );
   const activeSort = sort === "outlets" ? "outlets" : "score";
   const activeRegion = REGIONS.find((r) => r === region) ?? null;
   const activeLean = (LEAN_ORDER as string[]).includes(lean ?? "")
@@ -49,7 +54,8 @@ export default async function ComparePage({
     op: boolean = hideOpinion,
   ) => {
     const q = new URLSearchParams();
-    if (op) q.set("opinion", "hide");
+    const opv = opinionParam(op);
+    if (opv) q.set("opinion", opv);
     if (so === "outlets") q.set("sort", "outlets");
     if (l) q.set("lean", l);
     if (r) q.set("region", r);

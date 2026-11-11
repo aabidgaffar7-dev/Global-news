@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { OPINION_COOKIE, resolveOpinion } from "@/lib/opinion";
 import { notFound } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import CategoryArticles from "@/components/CategoryArticles";
@@ -36,7 +38,10 @@ export default async function TopicPage({
   const { word } = await params;
   const { region, opinion } = await searchParams;
   const w = clean(word);
-  const hideOpinion = opinion === "hide";
+  const { hide: hideOpinion, paramFor: opinionParam } = resolveOpinion(
+    opinion,
+    (await cookies()).get(OPINION_COOKIE)?.value,
+  );
   const activeRegion = REGIONS.find((r) => r === region) ?? null;
   if (!/^[\p{L}\p{N}]{2,40}$/u.test(w)) notFound();
 
@@ -54,7 +59,8 @@ export default async function TopicPage({
   const href = (r: string | null, op: boolean) => {
     const q = new URLSearchParams();
     if (r) q.set("region", r);
-    if (op) q.set("opinion", "hide");
+    const opv = opinionParam(op);
+    if (opv) q.set("opinion", opv);
     const str = q.toString();
     return `/topic/${encodeURIComponent(w)}${str ? `?${str}` : ""}`;
   };

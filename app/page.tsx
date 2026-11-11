@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { OPINION_COOKIE, resolveOpinion } from "@/lib/opinion";
 import SiteHeader from "@/components/SiteHeader";
 import TrendingTicker from "@/components/TrendingTicker";
 import TrendingLeanBar from "@/components/TrendingLeanBar";
@@ -31,7 +33,10 @@ export default async function Home({
   searchParams: Promise<{ region?: string; opinion?: string }>;
 }) {
   const { region, opinion } = await searchParams;
-  const hideOpinion = opinion === "hide";
+  const { hide: hideOpinion, paramFor: opinionParam } = resolveOpinion(
+    opinion,
+    (await cookies()).get(OPINION_COOKIE)?.value,
+  );
   const activeRegion = REGIONS.find((r) => r === region) ?? null;
   const stories = await getAllStories();
   const visible = hideOpinion ? stories.filter((s) => !isOpinion(s)) : stories;
@@ -41,7 +46,8 @@ export default async function Home({
   const qs = (r: string | null, hide: boolean) => {
     const p = new URLSearchParams();
     if (r) p.set("region", r);
-    if (hide) p.set("opinion", "hide");
+    const op = opinionParam(hide);
+    if (op) p.set("opinion", op);
     const q = p.toString();
     return q ? `/?${q}` : "/";
   };

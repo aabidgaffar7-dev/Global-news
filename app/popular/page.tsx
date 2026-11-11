@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { OPINION_COOKIE, resolveOpinion } from "@/lib/opinion";
 import SiteHeader from "@/components/SiteHeader";
 import StoryImage from "@/components/StoryImage";
 import RankInfo from "@/components/RankInfo";
@@ -46,7 +48,10 @@ export default async function PopularPage({
   searchParams: Promise<{ cat?: string; when?: string; region?: string; lean?: string; opinion?: string }>;
 }) {
   const { cat, when, region, lean, opinion } = await searchParams;
-  const hideOpinion = opinion === "hide";
+  const { hide: hideOpinion, paramFor: opinionParam } = resolveOpinion(
+    opinion,
+    (await cookies()).get(OPINION_COOKIE)?.value,
+  );
   const activeCat = (DISPLAY_CATEGORIES as string[]).includes(cat ?? "")
     ? (cat as Category)
     : null;
@@ -97,7 +102,8 @@ export default async function PopularPage({
     const l = next.lean !== undefined ? next.lean : activeLean;
     const o = next.opinion !== undefined ? next.opinion : hideOpinion;
     const params = new URLSearchParams();
-    if (o) params.set("opinion", "hide");
+    const op = opinionParam(o);
+    if (op) params.set("opinion", op);
     if (l) params.set("lean", l);
     if (c) params.set("cat", c);
     if (r) params.set("region", r);
