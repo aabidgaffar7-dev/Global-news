@@ -31,11 +31,9 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 28. Add an "Africa outlets" shortlist (see #2) as a ready-to-approve table in this file with feed URLs (proposed).
 27. Show reading-time (note: RSS summaries are short snippets, so the estimate may be misleading; consider dropping) estimate on story cards from summary length (proposed).
 
-39. Remember "Hide opinion" per reader (cookie) so it sticks across pages (proposed).
 43. Add "Most-discussed topics" ranking on `/topic` by reader votes/comments once vote data is exposed (proposed).
 44. Add a `/topic` search suggestion list (autocomplete from current trending words) (proposed).
-45. Show per-region story counts on `/topic/[word]` region chips (proposed).
-34. Carry "Hide opinion" to search and category pages (client-side filters there), or remember it per reader (proposed).
+34. Carry "Hide opinion" to search and category pages (client-side filters there; the `gn_hide_opinion` cookie from shift 25 can seed their default) (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
 Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle East, Africa, SE Asia, Latin America and Korea/Turkey. Suggested leans are only a starting point.
@@ -54,6 +52,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-11-11 (shift 25): "Hide opinion" now sticks per reader: choosing it on home, `/popular`, `/compare` or a topic page sets a 1-year `gn_hide_opinion` cookie (in `middleware.ts`), and the other pages honour it; the toggle sends `?opinion=show` to turn it back off. `/topic/[word]` region chips now show story counts and hide empty regions. Two tasks, lint and build pass.
 - 2026-11-10 (shift 24): `/topic` has a search box (jump to any single word's `/topic/[word]` page; client-side so the page stays cached) and each topic chip shows a small lean-mix bar. Two tasks, lint and build pass.
 - 2026-11-09 (shift 23): New `/topic` index (up to 40 topics headlined by 2+ outlets; linked from the home Trending row and sitemap) and a "Related topics" chip row on `/topic/[word]` (new `relatedTopics()` in `lib/compare.ts`). The account menu's Saved link now shows a count of saved articles. Two tasks, lint and build pass.
 - 2026-11-08 (shift 22): `/compare` got a "Hide opinion" toggle (`?opinion=hide`, combines with lean/region/sort, clusters recomputed without opinion pieces). `/topic/[word]` got region chips and a Hide opinion toggle (page is now server-rendered per request rather than cached). Two tasks, lint and build pass.
