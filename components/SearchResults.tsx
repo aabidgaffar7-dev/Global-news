@@ -6,6 +6,8 @@ import { LEAN_META, type Lean } from "@/lib/feeds";
 import { CATEGORY_META, type Category } from "@/lib/categories";
 import { REGIONS, regionOf } from "@/lib/regions";
 import { storyPlace, timeAgo } from "@/lib/format";
+import { isOpinion } from "@/lib/compare";
+import { useHideOpinion } from "@/lib/opinion-client";
 import type { Story } from "@/lib/news";
 
 type SourceFilter = "all" | "feeds" | "web";
@@ -25,6 +27,11 @@ export default function SearchResults({
   const [region, setRegion] = useState<string>("all");
   const [src, setSrc] = useState<SourceFilter>("all");
   const [sort, setSort] = useState<Sort>("relevant");
+  const [hideOpinion, setHideOpinion] = useHideOpinion();
+  const opinionCount = useMemo(
+    () => results.filter((r) => isOpinion(r)).length,
+    [results],
+  );
 
   const cats = useMemo(
     () => [...new Set(results.map((r) => r.category))],
@@ -47,6 +54,7 @@ export default function SearchResults({
         (cat === "all" || r.category === cat) &&
         (lean === "all" || r.lean === lean) &&
         (region === "all" || regionOf(r.country) === region) &&
+        (!hideOpinion || !isOpinion(r)) &&
         (src === "all" ||
           (src === "web" ? r.sourceId === "gnews" : r.sourceId !== "gnews")),
     );
@@ -57,7 +65,7 @@ export default function SearchResults({
       );
     }
     return list;
-  }, [results, cat, lean, region, src, sort]);
+  }, [results, cat, lean, region, src, sort, hideOpinion]);
 
   return (
     <>
@@ -138,19 +146,31 @@ export default function SearchResults({
             ) : (
               <span />
             )}
-            <div className="flex gap-1 rounded-full border border-white/10 bg-white/[0.03] p-0.5 text-xs">
-              <button
-                onClick={() => setSort("relevant")}
-                className={sortCls(sort === "relevant")}
-              >
-                Relevant
-              </button>
-              <button
-                onClick={() => setSort("latest")}
-                className={sortCls(sort === "latest")}
-              >
-                Latest
-              </button>
+            <div className="flex items-center gap-2">
+              {opinionCount > 0 && (
+                <Chip
+                  active={hideOpinion}
+                  onClick={() => setHideOpinion(!hideOpinion)}
+                  pressed={hideOpinion}
+                  title={`${opinionCount} opinion piece${opinionCount === 1 ? "" : "s"} in these results`}
+                >
+                  {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
+                </Chip>
+              )}
+              <div className="flex gap-1 rounded-full border border-white/10 bg-white/[0.03] p-0.5 text-xs">
+                <button
+                  onClick={() => setSort("relevant")}
+                  className={sortCls(sort === "relevant")}
+                >
+                  Relevant
+                </button>
+                <button
+                  onClick={() => setSort("latest")}
+                  className={sortCls(sort === "latest")}
+                >
+                  Latest
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -187,16 +207,22 @@ function Chip({
   active,
   onClick,
   color,
+  pressed,
+  title,
   children,
 }: {
   active: boolean;
   onClick: () => void;
   color?: string;
+  pressed?: boolean;
+  title?: string;
   children: React.ReactNode;
 }) {
   return (
     <button
       onClick={onClick}
+      aria-pressed={pressed}
+      title={title}
       className={`rounded-full border px-2.5 py-1 text-xs transition ${
         active
           ? "border-transparent bg-white/10 text-white"

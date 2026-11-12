@@ -6,6 +6,8 @@ import StoryImage from "@/components/StoryImage";
 import { LEAN_META } from "@/lib/feeds";
 import { REGIONS, regionOf } from "@/lib/regions";
 import { storyPlace, timeAgo } from "@/lib/format";
+import { isOpinion } from "@/lib/compare";
+import { useHideOpinion } from "@/lib/opinion-client";
 import type { Story } from "@/lib/news";
 
 // Articles arrive already score-sorted (Most Popular). The toggle re-sorts
@@ -24,19 +26,28 @@ export default function CategoryArticles({
   const [sort, setSort] = useState<"popular" | "latest">("popular");
   const [shown, setShown] = useState(PAGE);
   const [region, setRegion] = useState("all");
+  const [hideOpinion, setHideOpinion] = useHideOpinion();
+  const opinionCount = useMemo(
+    () => articles.filter((a) => isOpinion(a)).length,
+    [articles],
+  );
+  const base = useMemo(
+    () => (hideOpinion ? articles.filter((a) => !isOpinion(a)) : articles),
+    [articles, hideOpinion],
+  );
   const regionCounts = useMemo(() => {
     const m = new Map<string, number>();
-    for (const a of articles) {
+    for (const a of base) {
       const r = regionOf(a.country);
       m.set(r, (m.get(r) ?? 0) + 1);
     }
     return m;
-  }, [articles]);
+  }, [base]);
   const regions = REGIONS.filter((r) => regionCounts.has(r));
   const pool =
     region === "all"
-      ? articles
-      : articles.filter((a) => regionOf(a.country) === region);
+      ? base
+      : base.filter((a) => regionOf(a.country) === region);
   const sorted = [...pool].sort((a, b) =>
     sort === "latest"
       ? new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
@@ -74,9 +85,9 @@ export default function CategoryArticles({
         </div>
       </div>
 
-      {regions.length > 1 && (
+      {(regions.length > 1 || opinionCount > 0) && (
         <div className="mb-4 flex flex-wrap gap-1.5">
-          {["all", ...regions].map((r) => (
+          {regions.length > 1 && ["all", ...regions].map((r) => (
             <button
               key={r}
               onClick={() => {
@@ -94,12 +105,31 @@ export default function CategoryArticles({
                 : `🌍 ${r} · ${regionCounts.get(r)}`}
             </button>
           ))}
+          {opinionCount > 0 && (
+            <button
+              onClick={() => {
+                setHideOpinion(!hideOpinion);
+                setShown(PAGE);
+              }}
+              aria-pressed={hideOpinion}
+              title={`${opinionCount} opinion piece${opinionCount === 1 ? "" : "s"} in this section`}
+              className={`ml-auto rounded-full border px-2.5 py-1 text-xs transition ${
+                hideOpinion
+                  ? "border-transparent bg-white/10 text-white"
+                  : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+              }`}
+            >
+              {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
+            </button>
+          )}
         </div>
       )}
 
       {sorted.length === 0 ? (
         <p className="glass rounded-xl p-8 text-center text-slate-400">
-          {articles.length > 0
+          {base.length === 0 && articles.length > 0
+            ? `Only opinion pieces in ${label.toLowerCase()} right now. Turn off "Hide opinion" to see them.`
+            : articles.length > 0
             ? `No ${label.toLowerCase()} stories from this region right now.`
             : `No ${label.toLowerCase()} stories in the feed right now — check back soon.`}
         </p>
