@@ -25,7 +25,7 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 3. Re-add Korea and Turkey outlets with working feed URLs (Korea Herald and Hurriyet were dropped for 0 items) and test candidates with `check-feeds.mjs` (proposed; needs Aabid's PC to test).
 7. Add a "Report a broken feed" link on `/source/[id]` for outlets showing no stories (needs a destination: an email address or GitHub issues link from Aabid; `/api/health` is done) (proposed).
 11. Add a "Report a broken feed" or "Suggest an outlet" form once Aabid picks a destination (proposed).
-13. Tune `clusterCoverage()` thresholds against live data and show a "how this was grouped" note on `/compare` (proposed).
+13. Tune `clusterCoverage()` thresholds against live data (`CLUSTER_DEFAULTS` in `lib/compare.ts`; the "how this was grouped" note is done). Needs live data, so best done with Aabid looking at the real `/compare` page (proposed).
 25. Add Africa/Middle East outlets to the lean-balance diff on `/compare` clusters, after #17 (proposed).
 26. Add a Save button to `/compare` cluster stories. Note: `/compare` is ISR (revalidate 600), so per-user saved state needs a client-side fetch or dynamic rendering (proposed).
 28. Add an "Africa outlets" shortlist (see #2) as a ready-to-approve table in this file with feed URLs (proposed).
@@ -33,7 +33,9 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 
 43. Add "Most-discussed topics" ranking on `/topic` by reader votes/comments once vote data is exposed (proposed).
 44. Add a `/topic` search suggestion list (autocomplete from current trending words) (proposed).
-34. Carry "Hide opinion" to search and category pages (client-side filters there; the `gn_hide_opinion` cookie from shift 25 can seed their default) (proposed).
+45. Show a small "Opinion" tag on story cards and search rows that `isOpinion()` flags, so readers can see what the filter hides (proposed).
+46. Add a "Hide opinion" toggle to `/source/[id]` story lists using `useHideOpinion()` from `lib/opinion-client.ts` (proposed).
+47. Add a lean filter chip row to category pages (search and `/popular` have one; category pages only have region) (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
 Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle East, Africa, SE Asia, Latin America and Korea/Turkey. Suggested leans are only a starting point.
@@ -52,6 +54,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-11-12 (shift 26): "Hide opinion" now works on search results and category pages too (client-side toggle, so category pages stay cached; new `useHideOpinion()` hook shares the `gn_hide_opinion` cookie with the other pages; only shown when opinion pieces are present). `/compare` now explains how stories are grouped (header explainer with the real thresholds) and each cluster has a "Why these are grouped" list of the words each outlet shares. Two tasks, lint and build pass.
 - 2026-11-11 (shift 25): "Hide opinion" now sticks per reader: choosing it on home, `/popular`, `/compare` or a topic page sets a 1-year `gn_hide_opinion` cookie (in `middleware.ts`), and the other pages honour it; the toggle sends `?opinion=show` to turn it back off. `/topic/[word]` region chips now show story counts and hide empty regions. Two tasks, lint and build pass.
 - 2026-11-10 (shift 24): `/topic` has a search box (jump to any single word's `/topic/[word]` page; client-side so the page stays cached) and each topic chip shows a small lean-mix bar. Two tasks, lint and build pass.
 - 2026-11-09 (shift 23): New `/topic` index (up to 40 topics headlined by 2+ outlets; linked from the home Trending row and sitemap) and a "Related topics" chip row on `/topic/[word]` (new `relatedTopics()` in `lib/compare.ts`). The account menu's Saved link now shows a count of saved articles. Two tasks, lint and build pass.
