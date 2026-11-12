@@ -5,7 +5,13 @@ import ShareButton from "@/components/ShareButton";
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
 import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
-import { clusterCoverage, isOpinion, leanWordDiff } from "@/lib/compare";
+import {
+  CLUSTER_DEFAULTS,
+  clusterCoverage,
+  clusterLinks,
+  isOpinion,
+  leanWordDiff,
+} from "@/lib/compare";
 import { getAllStories } from "@/lib/news";
 import { REGIONS, regionOf } from "@/lib/regions";
 
@@ -79,6 +85,34 @@ export default async function ComparePage({
             grouped automatically by shared keywords. Read the headlines
             side by side, then click through to the original source.
           </p>
+          <details className="mx-auto mt-4 max-w-xl text-left text-sm text-slate-400">
+            <summary className="cursor-pointer text-center text-xs text-cyan-300/80 transition hover:text-cyan-300">
+              How are stories grouped?
+            </summary>
+            <ul className="glass mt-3 list-disc space-y-1.5 rounded-xl py-4 pl-9 pr-5 text-xs leading-relaxed">
+              <li>
+                We take the meaningful words from each headline (4+ letters,
+                skipping common words like &ldquo;says&rdquo; or &ldquo;report&rdquo;).
+              </li>
+              <li>
+                Starting from the highest-ranked story, a headline joins a
+                group when it shares at least {CLUSTER_DEFAULTS.minShared}{" "}
+                of those words with it, and only one story per outlet is
+                kept in each group.
+              </li>
+              <li>
+                A group is shown only if it spans at least{" "}
+                {CLUSTER_DEFAULTS.minOutlets} outlets and at least 2
+                different political leans. Up to {CLUSTER_DEFAULTS.limit}{" "}
+                groups appear, ranked by reader engagement.
+              </li>
+              <li>
+                It&rsquo;s automatic and word-based, so it can miss rewordings
+                or occasionally group two different stories. Open
+                &ldquo;Why these are grouped&rdquo; on any group to check.
+              </li>
+            </ul>
+          </details>
         </header>
 
         {allClusters.length > 0 && (
@@ -209,6 +243,20 @@ export default async function ComparePage({
                     </div>
                   ))}
                 </div>
+                <details className="mt-4 text-xs text-slate-400">
+                  <summary className="cursor-pointer text-slate-500 transition hover:text-slate-300">
+                    Why these are grouped
+                  </summary>
+                  <ul className="mt-2 space-y-1">
+                    {clusterLinks(c).map(({ story, words }) => (
+                      <li key={story.id}>
+                        <span className="text-slate-300">{story.source}</span>
+                        <span className="text-slate-500"> · shared words: </span>
+                        <span className="capitalize">{words.join(", ") || "none"}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
                 {(() => {
                   const diff = leanWordDiff(c).filter((d) => d.words.length > 0);
                   if (diff.length < 2) return null;

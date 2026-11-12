@@ -37,6 +37,13 @@ function shared(a: Set<string>, b: Set<string>): string[] {
   return hits;
 }
 
+/** Default clustering thresholds; also shown to readers on /compare. */
+export const CLUSTER_DEFAULTS: { minShared: number; minOutlets: number; limit: number } = {
+  minShared: 2,
+  minOutlets: 2,
+  limit: 12,
+};
+
 /**
  * Greedy clustering: a story joins the first cluster it shares at least
  * `minShared` keywords with (from a different outlet). Keeps clusters that
@@ -44,7 +51,11 @@ function shared(a: Set<string>, b: Set<string>): string[] {
  */
 export function clusterCoverage(
   stories: Story[],
-  { minShared = 2, minOutlets = 2, limit = 12 } = {},
+  {
+    minShared = CLUSTER_DEFAULTS.minShared,
+    minOutlets = CLUSTER_DEFAULTS.minOutlets,
+    limit = CLUSTER_DEFAULTS.limit,
+  } = {},
 ): CoverageCluster[] {
   type Work = { kw: Set<string>; stories: Story[] };
   const clusters: Work[] = [];
@@ -89,6 +100,22 @@ export function clusterCoverage(
     .filter((c) => c.leans.length >= 2)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
+}
+
+/**
+ * Why each story is in its cluster: the headline keywords it shares with at
+ * least one other story in the same cluster. Same order as `cluster.stories`.
+ */
+export function clusterLinks(
+  cluster: CoverageCluster,
+): { story: Story; words: string[] }[] {
+  const kws = cluster.stories.map((s) => topicKeywords(s.title));
+  return cluster.stories.map((story, i) => ({
+    story,
+    words: [...kws[i]]
+      .filter((w) => kws.some((other, j) => j !== i && other.has(w)))
+      .sort(),
+  }));
 }
 
 /**
