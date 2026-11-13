@@ -33,9 +33,9 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 
 43. Add "Most-discussed topics" ranking on `/topic` by reader votes/comments once vote data is exposed (proposed).
 44. Add a `/topic` search suggestion list (autocomplete from current trending words) (proposed).
-45. Show a small "Opinion" tag on story cards and search rows that `isOpinion()` flags, so readers can see what the filter hides (proposed).
-46. Add a "Hide opinion" toggle to `/source/[id]` story lists using `useHideOpinion()` from `lib/opinion-client.ts` (proposed).
-47. Add a lean filter chip row to category pages (search and `/popular` have one; category pages only have region) (proposed).
+48. Show the Opinion tag (`components/OpinionTag.tsx`) on `/compare` cluster headlines too; `/compare` has the Hide opinion filter but no per-headline tag (proposed).
+49. Keep category/topic filter choices (sort, region, lean) in the URL via `history.replaceState`, so a filtered view can be shared or bookmarked without making the cached pages dynamic (proposed).
+50. Add a "Clear filters" chip to `CategoryArticles` that shows when any region/lean filter is active (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
 Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle East, Africa, SE Asia, Latin America and Korea/Turkey. Suggested leans are only a starting point.
@@ -54,6 +54,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-11-13 (shift 27): Story cards (home, category, outlet and topic pages), search rows, `/popular` rows and the article header now show a small amber "Opinion" tag on pieces `isOpinion()` flags (new `components/OpinionTag.tsx`). Category pages got a lean chip row with per-lean counts that follows the region choice and combines with Hide opinion; it's in `CategoryArticles`, so `/topic/[word]` gets it too, and it hides itself on outlet pages (one lean). Closed #46: `/source/[id]` already had Hide opinion via `CategoryArticles`. Two tasks, lint and build pass.
 - 2026-11-12 (shift 26): "Hide opinion" now works on search results and category pages too (client-side toggle, so category pages stay cached; new `useHideOpinion()` hook shares the `gn_hide_opinion` cookie with the other pages; only shown when opinion pieces are present). `/compare` now explains how stories are grouped (header explainer with the real thresholds) and each cluster has a "Why these are grouped" list of the words each outlet shares. Two tasks, lint and build pass.
 - 2026-11-11 (shift 25): "Hide opinion" now sticks per reader: choosing it on home, `/popular`, `/compare` or a topic page sets a 1-year `gn_hide_opinion` cookie (in `middleware.ts`), and the other pages honour it; the toggle sends `?opinion=show` to turn it back off. `/topic/[word]` region chips now show story counts and hide empty regions. Two tasks, lint and build pass.
 - 2026-11-10 (shift 24): `/topic` has a search box (jump to any single word's `/topic/[word]` page; client-side so the page stays cached) and each topic chip shows a small lean-mix bar. Two tasks, lint and build pass.
