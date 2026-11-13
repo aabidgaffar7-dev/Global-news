@@ -7,6 +7,7 @@ import { CATEGORY_META, type Category } from "@/lib/categories";
 import { REGIONS, regionOf } from "@/lib/regions";
 import { storyPlace, timeAgo } from "@/lib/format";
 import { isOpinion } from "@/lib/compare";
+import OpinionTag from "@/components/OpinionTag";
 import { useHideOpinion } from "@/lib/opinion-client";
 import type { Story } from "@/lib/news";
 
@@ -269,6 +270,7 @@ function ResultRow({ story }: { story: Story }) {
               {lean.label}
             </span>
           )}
+          <OpinionTag story={story} />
           {storyPlace(story) && <span>· 📍 {storyPlace(story)}</span>}
           <span>· {timeAgo(story.publishedAt)}</span>
           <span className="aurora-text ml-auto font-medium">Read More →</span>

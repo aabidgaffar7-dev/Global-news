@@ -15,6 +15,7 @@ import {
 import { LEAN_META, type Lean } from "@/lib/feeds";
 import { REGIONS, regionOf } from "@/lib/regions";
 import { isOpinion } from "@/lib/compare";
+import OpinionTag from "@/components/OpinionTag";
 import { formatCount, storyPlace, timeAgo } from "@/lib/format";
 
 export const revalidate = 600;
@@ -297,6 +298,7 @@ function RankRow({ story, rank }: { story: Story; rank: number }) {
             </span>
             <span className="font-medium text-slate-300">{story.source}</span>
             <span style={{ color: lean.color }}>· {lean.label}</span>
+            <OpinionTag story={story} />
             {storyPlace(story) && <span>· 📍 {storyPlace(story)}</span>}
             <span>· {timeAgo(story.publishedAt)}</span>
           </div>

@@ -2,6 +2,7 @@ import { jsonLdString } from "@/lib/jsonld";
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
+import OpinionTag from "@/components/OpinionTag";
 import ReadSourceButton from "@/components/ReadSourceButton";
 import ShareButton from "@/components/ShareButton";
 import SaveButton from "@/components/SaveButton";
@@ -222,6 +223,7 @@ export default async function ArticlePage({
           >
             {lean.label}
           </span>
+          <OpinionTag story={story} />
           <span className="text-slate-500">
             {storyPlace(story)
               ? `· 📍 ${storyPlace(story)}${story.placement === "city" ? `, ${story.country}` : ""} · `

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import StoryImage from "@/components/StoryImage";
+import OpinionTag from "@/components/OpinionTag";
 import { LEAN_META } from "@/lib/feeds";
 import { REGIONS, regionOf } from "@/lib/regions";
 import { storyPlace, timeAgo } from "@/lib/format";
@@ -202,6 +203,7 @@ function ArticleCard({
           >
             {lean.label}
           </span>
+          <OpinionTag story={story} />
           <span className="ml-auto">
             {storyPlace(story) ? `📍 ${storyPlace(story)} · ` : ""}
             {timeAgo(story.publishedAt)}
