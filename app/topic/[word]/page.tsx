@@ -1,0 +1,178 @@
+import Link from "next/link";
+import { cookies } from "next/headers";
+import { OPINION_COOKIE, resolveOpinion } from "@/lib/opinion";
+import { notFound } from "next/navigation";
+import SiteHeader from "@/components/SiteHeader";
+import CategoryArticles from "@/components/CategoryArticles";
+import TrendingLeanBar from "@/components/TrendingLeanBar";
+import { getAllStories } from "@/lib/news";
+import { isOpinion, relatedTopics, topicKeywords } from "@/lib/compare";
+import { REGIONS, regionOf } from "@/lib/regions";
+
+export const revalidate = 600;
+
+function clean(raw: string): string {
+  return decodeURIComponent(raw).toLowerCase().trim().slice(0, 40);
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ word: string }>;
+}) {
+  const { word } = await params;
+  const w = clean(word);
+  return {
+    title: `${w} — coverage across outlets`,
+    description: `Every current story mentioning "${w}", with the political-lean mix of the outlets covering it.`,
+  };
+}
+
+export default async function TopicPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ word: string }>;
+  searchParams: Promise<{ region?: string; opinion?: string }>;
+}) {
+  const { word } = await params;
+  const { region, opinion } = await searchParams;
+  const w = clean(word);
+  const { hide: hideOpinion, paramFor: opinionParam } = resolveOpinion(
+    opinion,
+    (await cookies()).get(OPINION_COOKIE)?.value,
+  );
+  const activeRegion = REGIONS.find((r) => r === region) ?? null;
+  if (!/^[\p{L}\p{N}]{2,40}$/u.test(w)) notFound();
+
+  const stories = await getAllStories();
+  const topical = stories.filter((s) => topicKeywords(s.title).has(w));
+  const base = hideOpinion ? topical.filter((s) => !isOpinion(s)) : topical;
+  const articles = activeRegion
+    ? base.filter((s) => regionOf(s.country) === activeRegion)
+    : base;
+  const regionCounts = new Map<string, number>();
+  for (const s of base) {
+    const r = regionOf(s.country);
+    regionCounts.set(r, (regionCounts.get(r) ?? 0) + 1);
+  }
+  const href = (r: string | null, op: boolean) => {
+    const q = new URLSearchParams();
+    if (r) q.set("region", r);
+    const opv = opinionParam(op);
+    if (opv) q.set("opinion", opv);
+    const str = q.toString();
+    return `/topic/${encodeURIComponent(w)}${str ? `?${str}` : ""}`;
+  };
+  const pill = (active: boolean) =>
+    `rounded-full border px-3 py-1.5 text-sm transition ${
+      active
+        ? "border-transparent bg-white/10 text-white"
+        : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+    }`;
+  const related = relatedTopics(stories, w);
+  const outlets = new Set(articles.map((s) => s.sourceId)).size;
+
+  return (
+    <div className="min-h-screen text-slate-200">
+      <SiteHeader />
+      <main id="main-content" className="mx-auto max-w-6xl px-5 pb-24 pt-8">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white"
+        >
+          ← Back to Home
+        </Link>
+        <h1 className="font-display mt-5 text-4xl font-medium capitalize text-white">
+          {w}
+        </h1>
+        <p className="mt-2 text-sm text-slate-400">
+          {articles.length} {articles.length === 1 ? "story" : "stories"} from{" "}
+          {outlets} {outlets === 1 ? "outlet" : "outlets"} right now ·{" "}
+          <Link
+            href={`/search?q=${encodeURIComponent(w)}`}
+            className="text-cyan-300 hover:underline"
+          >
+            search the wider web
+          </Link>
+        </p>
+
+        {(topical.length > 0 || activeRegion || hideOpinion) && (
+          <nav aria-label="Filter stories" className="mt-5 flex flex-wrap gap-2">
+            <Link href={href(null, hideOpinion)} className={pill(!activeRegion)}>
+              All regions <span className="text-slate-500">{base.length}</span>
+            </Link>
+            {REGIONS.filter(
+              (r) => regionCounts.has(r) || activeRegion === r,
+            ).map((r) => (
+              <Link
+                key={r}
+                href={href(r, hideOpinion)}
+                className={pill(activeRegion === r)}
+                aria-label={`${r}: ${regionCounts.get(r) ?? 0} stories`}
+              >
+                {r}{" "}
+                <span className="text-slate-500">{regionCounts.get(r) ?? 0}</span>
+              </Link>
+            ))}
+            <Link href={href(activeRegion, !hideOpinion)} className={pill(hideOpinion)}>
+              {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
+            </Link>
+          </nav>
+        )}
+
+        {related.length > 0 && (
+          <nav
+            aria-label="Related topics"
+            className="mt-4 flex flex-wrap items-center gap-2"
+          >
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Related
+            </span>
+            {related.map((t) => (
+              <Link
+                key={t.word}
+                href={`/topic/${encodeURIComponent(t.word)}`}
+                title={`appears in ${t.stories} of these headlines`}
+                className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-sm capitalize text-slate-300 transition hover:bg-white/[0.07]"
+              >
+                {t.word}
+              </Link>
+            ))}
+            <Link href="/topic" className="text-sm text-cyan-300 hover:underline">
+              All topics
+            </Link>
+          </nav>
+        )}
+
+        {articles.length > 0 ? (
+          <>
+            <TrendingLeanBar
+              leans={articles.map((s) => s.lean)}
+              title="Who is covering this"
+              caption={`across ${articles.length} stories`}
+            />
+            <CategoryArticles
+              articles={articles}
+              color="#22d3ee"
+              label={w}
+            />
+          </>
+        ) : (
+          <p className="mt-10 text-slate-500">
+            {activeRegion || hideOpinion
+              ? "No stories match these filters. "
+              : <>No current headlines mention &ldquo;{w}&rdquo;. </>}Try{" "}
+            <Link
+              href={`/search?q=${encodeURIComponent(w)}`}
+              className="text-cyan-300 hover:underline"
+            >
+              searching
+            </Link>{" "}
+            instead.
+          </p>
+        )}
+      </main>
+    </div>
+  );
+}

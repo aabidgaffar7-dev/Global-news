@@ -9,7 +9,7 @@ import { LEAN_META, FEEDS } from "@/lib/feeds";
 // One-screen starter: pick topics (+ optionally a few outlets), write them
 // straight into `follows`, land on a For You / Following that already works.
 const STARTER_SOURCES = FEEDS.filter((f) =>
-  ["bbc", "aljazeera", "npr", "telegraph", "huffpost", "foxnews"].includes(f.id),
+  ["bbc", "aljazeera", "npr", "telegraph", "motherjones", "foxnews"].includes(f.id),
 );
 
 export default function WelcomePicker({ userId }: { userId: string }) {

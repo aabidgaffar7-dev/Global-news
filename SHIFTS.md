@@ -1,0 +1,88 @@
+# GlobeNews build shifts
+
+Claude works on GlobeNews in small daily shifts from the cloud. This file is the handoff between shifts: read it first, update it last.
+
+## Rules
+- Work only on the `claude/shifts` branch. Never push to `main`. Keep one open pull request from `claude/shifts` into `main`; Aabid merges it when he's happy.
+- Up to two focused tasks per shift; the second only if it can be finished cleanly. Small, finished, and working beats big and half-done.
+- Before pushing, `npm run lint` and `npm run build` must pass.
+- Follow AGENTS.md: read the guides in node_modules/next/dist/docs/ before writing Next.js code.
+- Never buy anything or sign up for anything. If something costs money, ask Aabid: what, why, cost, link, free alternative.
+- Never ask for API keys or passwords in chat. Say where to paste them and list the variable name in `.env.example`.
+- Outlet political-lean ratings are Aabid's call. Propose them; don't decide them.
+- Don't run or change Supabase schema/SQL without Aabid's OK.
+
+## About GlobeNews
+- Neutral world news platform: stories rise on reader engagement, not editorial selection.
+- Political-lean transparency: international outlets hand-rated and labeled by vantage point.
+- Neutral AI key-point summaries (Claude API) with prominent attribution to the source outlet.
+- Sources: RSS first, supplemented by GNews and NewsData.
+- Community layer: votes, discussion, polls, user posts, moderation.
+
+## Backlog (proposed; Aabid can reorder or veto)
+1. Re-run `node scripts/check-feeds.mjs` from a machine with open internet (cloud shifts are network-blocked) and fix or drop dead feeds. (Needs Aabid's PC: run it and paste the output, or say "fine".)
+2. Widen Africa coverage beyond South Africa (e.g. Nigeria, Kenya, Egypt outlets) with suggested leans for Aabid to approve; the new `/sources` region bar shows it is thin (proposed).
+3. Re-add Korea and Turkey outlets with working feed URLs (Korea Herald and Hurriyet were dropped for 0 items) and test candidates with `check-feeds.mjs` (proposed; needs Aabid's PC to test).
+7. Add a "Report a broken feed" link on `/source/[id]` for outlets showing no stories (needs a destination: an email address or GitHub issues link from Aabid; `/api/health` is done) (proposed).
+11. Add a "Report a broken feed" or "Suggest an outlet" form once Aabid picks a destination (proposed).
+13. Tune `clusterCoverage()` thresholds against live data (`CLUSTER_DEFAULTS` in `lib/compare.ts`; the "how this was grouped" note is done). Needs live data, so best done with Aabid looking at the real `/compare` page (proposed).
+25. Add Africa/Middle East outlets to the lean-balance diff on `/compare` clusters, after #17 (proposed).
+26. Add a Save button to `/compare` cluster stories. Note: `/compare` is ISR (revalidate 600), so per-user saved state needs a client-side fetch or dynamic rendering (proposed).
+28. Add an "Africa outlets" shortlist (see #2) as a ready-to-approve table in this file with feed URLs (proposed).
+27. Show reading-time (note: RSS summaries are short snippets, so the estimate may be misleading; consider dropping) estimate on story cards from summary length (proposed).
+
+43. Add "Most-discussed topics" ranking on `/topic` by reader votes/comments once vote data is exposed (proposed).
+44. Add a `/topic` search suggestion list (autocomplete from current trending words) (proposed).
+48. Show the Opinion tag (`components/OpinionTag.tsx`) on `/compare` cluster headlines too; `/compare` has the Hide opinion filter but no per-headline tag (proposed).
+49. Keep category/topic filter choices (sort, region, lean) in the URL via `history.replaceState`, so a filtered view can be shared or bookmarked without making the cached pages dynamic (proposed).
+50. Add a "Clear filters" chip to `CategoryArticles` that shows when any region/lean filter is active (proposed).
+
+## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
+Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle East, Africa, SE Asia, Latin America and Korea/Turkey. Suggested leans are only a starting point.
+- Dawn (Karachi, Pakistan): https://www.dawn.com/feeds/home - center
+- The Hindu (Chennai, India): https://www.thehindu.com/news/feeder/default.rss - center-left
+- Haaretz (Tel Aviv): https://www.haaretz.com/srv/haaretz-latest-headlines - left
+- Arab News (Riyadh): https://www.arabnews.com/rss.xml - intl (Gulf state-aligned vantage point)
+- Daily Maverick (Cape Town): https://www.dailymaverick.co.za/dmrss/ - center-left
+- The Straits Times (Singapore): https://www.straitstimes.com/news/world/rss.xml - center
+- Korea Herald (Seoul): http://www.koreaherald.com/common/rss_xml.php?ct=102 - center
+- Hurriyet Daily News (Istanbul): https://www.hurriyetdailynews.com/rss - center-right
+- MercoPress (Montevideo, Latin America): https://en.mercopress.com/rss - center
+- Buenos Aires Times (Argentina): https://www.batimes.com.ar/feed - center
+
+## Waiting on Aabid
+(nothing right now)
+
+## Shift log (newest first)
+- 2026-11-13 (shift 27): Story cards (home, category, outlet and topic pages), search rows, `/popular` rows and the article header now show a small amber "Opinion" tag on pieces `isOpinion()` flags (new `components/OpinionTag.tsx`). Category pages got a lean chip row with per-lean counts that follows the region choice and combines with Hide opinion; it's in `CategoryArticles`, so `/topic/[word]` gets it too, and it hides itself on outlet pages (one lean). Closed #46: `/source/[id]` already had Hide opinion via `CategoryArticles`. Two tasks, lint and build pass.
+- 2026-11-12 (shift 26): "Hide opinion" now works on search results and category pages too (client-side toggle, so category pages stay cached; new `useHideOpinion()` hook shares the `gn_hide_opinion` cookie with the other pages; only shown when opinion pieces are present). `/compare` now explains how stories are grouped (header explainer with the real thresholds) and each cluster has a "Why these are grouped" list of the words each outlet shares. Two tasks, lint and build pass.
+- 2026-11-11 (shift 25): "Hide opinion" now sticks per reader: choosing it on home, `/popular`, `/compare` or a topic page sets a 1-year `gn_hide_opinion` cookie (in `middleware.ts`), and the other pages honour it; the toggle sends `?opinion=show` to turn it back off. `/topic/[word]` region chips now show story counts and hide empty regions. Two tasks, lint and build pass.
+- 2026-11-10 (shift 24): `/topic` has a search box (jump to any single word's `/topic/[word]` page; client-side so the page stays cached) and each topic chip shows a small lean-mix bar. Two tasks, lint and build pass.
+- 2026-11-09 (shift 23): New `/topic` index (up to 40 topics headlined by 2+ outlets; linked from the home Trending row and sitemap) and a "Related topics" chip row on `/topic/[word]` (new `relatedTopics()` in `lib/compare.ts`). The account menu's Saved link now shows a count of saved articles. Two tasks, lint and build pass.
+- 2026-11-08 (shift 22): `/compare` got a "Hide opinion" toggle (`?opinion=hide`, combines with lean/region/sort, clusters recomputed without opinion pieces). `/topic/[word]` got region chips and a Hide opinion toggle (page is now server-rendered per request rather than cached). Two tasks, lint and build pass.
+- 2026-11-07 (shift 21): New `/topic/[word]` page (current stories mentioning the word, lean mix bar, outlet count); home Trending chips now link to it. `/popular` got a "Hide opinion" toggle (`?opinion=hide`, combines with other filters). Two tasks, lint and build pass.
+- 2026-11-06 (shift 20): Home page has a "Trending" topic chip row (words headlined by 3+ outlets, links to search) and a "Hide opinion" toggle (URL `?opinion=hide`, combines with region; title/URL heuristics in `isOpinion()`). Two tasks, lint and build pass.
+- 2026-11-05 (shift 19): `/compare` has a "Sort by: Top score / Most outlets" toggle (URL `?sort=outlets`, combines with lean/region) and the lean-diff words now link into `/search`. Skipped the Save button on `/compare` (page is cached, so per-user state doesn't fit cleanly). Two tasks, lint and build pass.
+- 2026-11-04 (shift 18): `/compare` clusters now show "words only this side used" per lean (new `leanWordDiff()` in `lib/compare.ts`), and category pages have their own Open Graph share card (name, description, live story count). Two tasks, lint and build pass.
+- 2026-11-03 (shift 17): Added a Share button to each `/compare` cluster (shares a `/search` link for the topic) and a floating "Back to top" button site-wide. Save/bookmark (`/saved`), article Share and skip-to-content already existed, so those backlog items were closed. Two tasks, lint and build pass.
+- 2026-11-02 (shift 16): `/compare` now has a region chip row that combines with the lean filter (URL `?region=`). Article pages emit `NewsArticle` JSON-LD and `/source/[id]` emits `NewsMediaOrganization` JSON-LD (shared `lib/jsonld.ts`, `<` escaped). Two tasks, lint and build pass.
+- 2026-11-01 (shift 15): `/compare` now has a lean filter chip row (URL-based `?lean=`, with an empty state) and each cluster has a "Search this topic" link into `/search`. Added a per-outlet Open Graph share card at `/source/[id]/opengraph-image` (name, city, lean). Article pages already had their own OG image. Lint and build pass.
+- 2026-10-31 (shift 14): Added per-category RSS feeds at `/category/[slug]/feed.xml` (top 30 stories, auto-discovery link in the page head plus a visible "RSS feed" link). Shared the RSS builder in `lib/rss.ts` (used by `/feed.xml` too). Only one task this shift (other unblocked items are speculative). Lint and build pass.
+- 2026-10-30 (shift 13): Added `/feed.xml`, an RSS 2.0 feed of the top 30 stories (linked in the footer and page head for feed readers). Home page now shows a strip of the top 3 multi-lean coverage clusters linking to `/compare`. Lint and build pass.
+- 2026-10-29 (shift 12): New `/compare` page: topic clusters with headlines side by side, grouped by lean, linked from the footer, mobile menu and sitemap. Article pages show a "Covered by N outlets across M leans" chip linking to it when the story is in a cluster. Lint and build pass (sandbox offline, so clusters only appear with live data).
+- 2026-10-28 (shift 11): `/popular` now has a lean filter chip row (works with topic, region and time filters, URL-based `?lean=`). Added `lib/compare.ts` with `clusterCoverage()`, which groups same-event stories across outlets with 2+ distinct leans (sanity-checked on sample headlines; no UI yet). Lint and build pass.
+- 2026-10-27 (shift 10): Home page now has a region chip row (URL-based `?region=`) that filters the front page and the trending lean bar; shows an empty state when a region has no stories. Only one task this shift (the rest of the backlog needs Aabid or is large). Lint and build pass.
+- 2026-10-26 (shift 9): `/popular` now has a region chip row (works with the topic and time filters, URL-based `?region=`). Search already had a lean filter, so that backlog item was closed. Only one task this shift. Lint and build pass.
+- 2026-10-25 (shift 8): Category pages now have a region chip row (with story counts) that filters the article grid. Added `/api/health`: JSON of per-outlet story counts, latest story time and a `silent` list for uptime monitoring. Lint and build pass.
+- 2026-10-24 (shift 7): `/source/[id]` now shows when the outlet's latest story was published, or an amber "feed may be down" warning if it has none; `/sources` flags outlets with no live stories and revalidates every 10 min. Only one task this shift. Lint and build pass (the sandbox is offline, so the flags only show with live data).
+- 2026-10-23 (shift 6): Added an outlet page `/source/[id]` (lean badge, city/country, live story count, full sortable story list); outlet names on `/sources` link to it and all outlets are in the sitemap. Added a region filter chip row to search results (new shared `lib/regions.ts`, with ~40 more countries mapped so story locations classify). Lint and build pass.
+- 2026-10-22 (shift 5): Lean labels were already on story cards and the article page, so I closed that item. Added `/sources` ("Our sources"): all rated outlets grouped by lean with country, plus a coverage-by-region bar chart (Africa, Oceania and Latin America are thinnest). Linked from About, the footer and the sitemap. Lint and build pass.
+- 2026-10-22 (follow-up): HuffPost's feed redirects to an empty XML doc, so it's removed. Aabid tested four left candidates (all healthy) and left the pick to Claude: added Mother Jones and Democracy Now! (both `left`, both mostly news reporting rather than opinion), giving 2 left vs 2 right. WelcomePicker starter list now uses Mother Jones instead of HuffPost. Old `huffpost` follows in Supabase just go quiet; no schema change. The Nation (50 items) and The Intercept (20) also passed if more left coverage is wanted.
+- 2026-10-22: HuffPost's new feed URL also returns 0 items on Aabid's PC. `check-feeds.mjs` now takes candidate URLs as arguments and shows where a 0-item feed actually landed. Waiting on Aabid to test candidate left-leaning replacements and approve one.
+- 2026-10-21 (feed check 2): Final failure was HuffPost (200 but 0 items). It's the only `left` outlet now that Haaretz is gone and is in WelcomePicker, so I kept it and swapped to `https://www.huffpost.com/section/front-page/feed` (unverified; Aabid to re-run the check). If still 0 items, replace with another left-leaning outlet.
+- 2026-10-21 (feed check): Aabid ran the check on his PC: 38/42 healthy. Removed Haaretz (403, blocks bots), Korea Herald and Hurriyet Daily News (200 but 0 items; feed URL/format wrong). Candidates to re-add later with a working feed URL. One more failure was above the screenshot; waiting on its name.
+- 2026-10-21 (follow-up): Aabid approved all 10 proposed outlets and leans; added them to `lib/feeds.ts` (roster now 41). Lint and build pass.
+- 2026-10-21 (shift 4): `scripts/check-feeds.mjs` now imports the real roster from `lib/feeds.ts` (the old hardcoded list had drifted, e.g. CBC vs Global News) and runs in parallel. The cloud sandbox has no outbound internet, so feed health could NOT be tested here; needs a run on Aabid's PC. Added 10 proposed outlets with suggested leans for Aabid to approve. Lint and build pass.
+- 2026-10-20 (shift 3): Replaced the create-next-app README with a real one (what GlobeNews is, local run, env table, Supabase SQL run order inferred from file dependencies, so please sanity-check it). Lint and build pass.
+- 2026-10-19 (shift 2): Added `.env.example` (all 6 env vars the code reads, with where each comes from; Supabase required, rest optional) and un-ignored it in `.gitignore`. Lint and build pass.
+- 2026-10-19: Cleared all lint errors/warnings (build already passed). Real code fixes for the two expression warnings; documented eslint-disables for intentional set-state-in-effect (localStorage/SSR) patterns, one `any` (globe handle) and Date.now in a server page. Created SHIFTS.md.

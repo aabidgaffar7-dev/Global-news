@@ -18,6 +18,7 @@ export default function OnboardingStrip() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is only readable after mount (SSR-safe)
     if (!localStorage.getItem(KEY)) setShow(true);
   }, []);
 

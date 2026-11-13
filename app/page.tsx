@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { OPINION_COOKIE, resolveOpinion } from "@/lib/opinion";
 import SiteHeader from "@/components/SiteHeader";
 import TrendingTicker from "@/components/TrendingTicker";
 import TrendingLeanBar from "@/components/TrendingLeanBar";
@@ -18,12 +20,39 @@ import {
   DISPLAY_CATEGORIES,
   type Category,
 } from "@/lib/categories";
+import { REGIONS, regionOf } from "@/lib/regions";
+import { clusterCoverage, isOpinion, trendingTopics } from "@/lib/compare";
+import { LEAN_META } from "@/lib/feeds";
 import { timeAgo } from "@/lib/format";
 
 export const revalidate = 600;
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ region?: string; opinion?: string }>;
+}) {
+  const { region, opinion } = await searchParams;
+  const { hide: hideOpinion, paramFor: opinionParam } = resolveOpinion(
+    opinion,
+    (await cookies()).get(OPINION_COOKIE)?.value,
+  );
+  const activeRegion = REGIONS.find((r) => r === region) ?? null;
   const stories = await getAllStories();
+  const visible = hideOpinion ? stories.filter((s) => !isOpinion(s)) : stories;
+  const regionStories = activeRegion
+    ? visible.filter((s) => regionOf(s.country) === activeRegion)
+    : visible;
+  const qs = (r: string | null, hide: boolean) => {
+    const p = new URLSearchParams();
+    if (r) p.set("region", r);
+    const op = opinionParam(hide);
+    if (op) p.set("opinion", op);
+    const q = p.toString();
+    return q ? `/?${q}` : "/";
+  };
+  const clusters = clusterCoverage(stories, { limit: 3 });
+  const topics = trendingTopics(stories);
   const active = globeLocations(stories).filter((l) => l.storyCount > 0);
   const activeCities = active.length;
   const countries = new Set(active.map((l) => l.country)).size;
@@ -83,14 +112,120 @@ export default async function Home() {
         </section>
 
         {/* THE NEWS — first interactive content on the page. */}
-        <div className="mt-8">
-          <FrontPage stories={stories.slice(0, 8)} />
+        <nav
+          aria-label="Filter by region"
+          className="mt-6 flex flex-wrap gap-2"
+        >
+          {[null, ...REGIONS].map((r) => (
+            <Link
+              key={r ?? "all"}
+              href={qs(r, hideOpinion)}
+              aria-current={activeRegion === r ? "true" : undefined}
+              className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                activeRegion === r
+                  ? "border-transparent bg-white/10 text-white"
+                  : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+              }`}
+            >
+              {r ? `🌍 ${r}` : "All regions"}
+            </Link>
+          ))}
+          <Link
+            href={qs(activeRegion, !hideOpinion)}
+            aria-pressed={hideOpinion}
+            className={`ml-auto rounded-full border px-3 py-1.5 text-sm transition ${
+              hideOpinion
+                ? "border-transparent bg-white/10 text-white"
+                : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+            }`}
+          >
+            {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
+          </Link>
+        </nav>
+
+        {topics.length > 0 && (
+          <nav
+            aria-label="Trending topics"
+            className="mt-4 flex flex-wrap items-center gap-2"
+          >
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Trending
+            </span>
+            {topics.map((t) => (
+              <Link
+                key={t.word}
+                href={`/topic/${encodeURIComponent(t.word)}`}
+                title={`${t.outlets} outlets are covering this`}
+                className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-sm capitalize text-slate-300 transition hover:bg-white/[0.07]"
+              >
+                {t.word}
+              </Link>
+            ))}
+            <Link href="/topic" className="text-sm text-cyan-300 hover:underline">
+              All topics
+            </Link>
+          </nav>
+        )}
+
+        <div className="mt-6">
+          {regionStories.length === 0 ? (
+            <p className="glass rounded-2xl p-6 text-sm text-slate-400">
+              No stories from {activeRegion} right now.
+            </p>
+          ) : (
+            <FrontPage stories={regionStories.slice(0, 8)} />
+          )}
         </div>
 
         {/* Evidence for the claim the masthead just made. */}
         <div className="mt-8">
-          <TrendingLeanBar leans={stories.slice(0, 15).map((s) => s.lean)} />
+          <TrendingLeanBar leans={regionStories.slice(0, 15).map((s) => s.lean)} />
         </div>
+
+        {clusters.length > 0 && (
+          <section className="mt-8" aria-labelledby="compare-heading">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 border-b border-white/10 pb-2">
+              <h2
+                id="compare-heading"
+                className="font-display text-xl font-medium text-[#ece8e1]"
+              >
+                Same story, different vantage points
+              </h2>
+              <Link
+                href="/compare"
+                className="text-sm text-cyan-300 hover:underline"
+              >
+                Compare coverage →
+              </Link>
+            </div>
+            <ul className="mt-4 grid gap-4 md:grid-cols-3">
+              {clusters.map((c) => (
+                <li key={c.id}>
+                  <Link
+                    href="/compare"
+                    className="glass block h-full rounded-2xl p-4 transition hover:border-white/25"
+                  >
+                    <div className="line-clamp-2 text-sm text-slate-200">
+                      {c.stories[0].title}
+                    </div>
+                    <div className="mt-2 text-xs text-slate-500">
+                      {c.stories.length} outlets · {c.leans.length} leans
+                    </div>
+                    <div className="mt-2 flex gap-1.5" aria-hidden>
+                      {c.leans.map((l) => (
+                        <span
+                          key={l}
+                          className="h-2 w-2 rounded-full"
+                          style={{ background: LEAN_META[l].color }}
+                        />
+                      ))}
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Personal rails come AFTER the news — a visitor should meet the
             world's front page before being handed recommendations. */}
