@@ -175,6 +175,24 @@ export default function CategoryArticles({
         </div>
       )}
 
+      {(region !== "all" || lean !== "all") && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+          <span>
+            Showing {sorted.length} of {base.length} stories
+          </span>
+          <button
+            onClick={() => {
+              setRegion("all");
+              setLean("all");
+              setShown(PAGE);
+            }}
+            className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-slate-300 transition hover:bg-white/[0.07]"
+          >
+            ✕ Clear filters
+          </button>
+        </div>
+      )}
+
       {sorted.length === 0 ? (
         <p className="glass rounded-xl p-8 text-center text-slate-400">
           {base.length === 0 && articles.length > 0
