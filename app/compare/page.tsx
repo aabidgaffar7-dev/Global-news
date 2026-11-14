@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { OPINION_COOKIE, resolveOpinion } from "@/lib/opinion";
 import ShareButton from "@/components/ShareButton";
+import OpinionTag from "@/components/OpinionTag";
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
 import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
@@ -234,8 +235,9 @@ export default async function ComparePage({
                               >
                                 {s.title}
                               </Link>
-                              <div className="text-xs text-slate-500">
-                                {s.source}
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                <span>{s.source}</span>
+                                <OpinionTag story={s} />
                               </div>
                             </li>
                           ))}
