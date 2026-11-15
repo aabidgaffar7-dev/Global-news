@@ -156,6 +156,7 @@ export default async function TopicPage({
               articles={articles}
               color="#22d3ee"
               label={w}
+              showRegion={false}
             />
           </>
         ) : (

@@ -9,25 +9,44 @@ import { REGIONS, regionOf } from "@/lib/regions";
 import { storyPlace, timeAgo } from "@/lib/format";
 import { isOpinion } from "@/lib/compare";
 import { useHideOpinion } from "@/lib/opinion-client";
+import { useUrlParams } from "@/lib/url-state-client";
 import type { Story } from "@/lib/news";
 
 // Articles arrive already score-sorted (Most Popular). The toggle re-sorts
 // client-side so readers can flip to chronological without a round-trip.
+// Sort, region and lean live in the URL (?sort=latest&region=Asia&lean=left)
+// via replaceState, so a filtered view can be shared while the page stays
+// cached.
 const PAGE = 24;
 
 export default function CategoryArticles({
   articles,
   color,
   label,
+  showRegion = true,
 }: {
   articles: Story[];
   color: string;
   label: string;
+  /** False where the page already filters by region server-side (topics). */
+  showRegion?: boolean;
 }) {
-  const [sort, setSort] = useState<"popular" | "latest">("popular");
+  const [params, setParams] = useUrlParams();
+  const sort: "popular" | "latest" =
+    params.get("sort") === "latest" ? "latest" : "popular";
+  const urlRegion = params.get("region");
+  const region =
+    showRegion && REGIONS.some((r) => r === urlRegion) ? urlRegion! : "all";
+  const urlLean = params.get("lean");
+  const lean: Lean | "all" =
+    LEAN_ORDER.find((l) => l === urlLean) ?? "all";
+  const setSort = (v: "popular" | "latest") =>
+    setParams({ sort: v === "latest" ? v : null });
+  const setRegion = (v: string) =>
+    setParams({ region: v === "all" ? null : v });
+  const setLean = (v: Lean | "all") =>
+    setParams({ lean: v === "all" ? null : v });
   const [shown, setShown] = useState(PAGE);
-  const [region, setRegion] = useState("all");
-  const [lean, setLean] = useState<Lean | "all">("all");
   const [hideOpinion, setHideOpinion] = useHideOpinion();
   const opinionCount = useMemo(
     () => articles.filter((a) => isOpinion(a)).length,
@@ -45,7 +64,7 @@ export default function CategoryArticles({
     }
     return m;
   }, [base]);
-  const regions = REGIONS.filter((r) => regionCounts.has(r));
+  const regions = showRegion ? REGIONS.filter((r) => regionCounts.has(r)) : [];
   const inRegion =
     region === "all"
       ? base
@@ -182,8 +201,7 @@ export default function CategoryArticles({
           </span>
           <button
             onClick={() => {
-              setRegion("all");
-              setLean("all");
+              setParams({ region: null, lean: null });
               setShown(PAGE);
             }}
             className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-slate-300 transition hover:bg-white/[0.07]"
