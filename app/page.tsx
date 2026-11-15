@@ -22,6 +22,7 @@ import {
 } from "@/lib/categories";
 import { REGIONS, regionOf } from "@/lib/regions";
 import { clusterCoverage, isOpinion, trendingTopics } from "@/lib/compare";
+import OpinionTag from "@/components/OpinionTag";
 import { LEAN_META } from "@/lib/feeds";
 import { timeAgo } from "@/lib/format";
 
@@ -208,8 +209,11 @@ export default async function Home({
                     <div className="line-clamp-2 text-sm text-slate-200">
                       {c.stories[0].title}
                     </div>
-                    <div className="mt-2 text-xs text-slate-500">
-                      {c.stories.length} outlets · {c.leans.length} leans
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <span>
+                        {c.stories.length} outlets · {c.leans.length} leans
+                      </span>
+                      <OpinionTag story={c.stories[0]} />
                     </div>
                     <div className="mt-2 flex gap-1.5" aria-hidden>
                       {c.leans.map((l) => (

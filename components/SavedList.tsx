@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import StoryImage from "@/components/StoryImage";
+import OpinionTag from "@/components/OpinionTag";
 import { getBrowserSupabase } from "@/lib/supabase-browser";
 import { CATEGORY_META, type Category } from "@/lib/categories";
 import { timeAgo } from "@/lib/format";
@@ -88,6 +89,7 @@ export default function SavedList({
                     </span>
                   )}
                   <span className="font-medium text-slate-300">{r.source}</span>
+                  <OpinionTag story={{ link: r.link, title: r.title ?? "" }} />
                   <span>· saved {timeAgo(r.savedAt)}</span>
                   {r.external && <span className="text-slate-500">· source ↗</span>}
                 </div>
