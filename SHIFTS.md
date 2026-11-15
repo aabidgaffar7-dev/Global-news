@@ -33,9 +33,9 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 
 43. Add "Most-discussed topics" ranking on `/topic` by reader votes/comments once vote data is exposed (proposed).
 44. Add a `/topic` search suggestion list (autocomplete from current trending words) (proposed).
-49. Keep category/topic filter choices (sort, region, lean) in the URL via `history.replaceState`, so a filtered view can be shared or bookmarked without making the cached pages dynamic (proposed).
-51. Show the Opinion tag on `/compare` home-page cluster strip and on `/saved` rows, so the tag is consistent everywhere a headline appears (proposed).
-52. Add a "Latest/Popular" sort toggle to `/topic/[word]` results (it is already per-request rendered, so a URL `?sort=latest` fits) (proposed).
+53. Link each home-page "Same story, different vantage points" card to its own cluster on `/compare` (add `id={c.id}` anchors there) instead of the top of the page (proposed).
+54. Add a "Copy link to this view" button next to the filter chips on category/topic/outlet pages, now that sort/region/lean live in the URL (proposed).
+55. Show the amber Opinion tag on `/for-you`, `/following` and `/history` rows, so it matches the rest of the site (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
 Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle East, Africa, SE Asia, Latin America and Korea/Turkey. Suggested leans are only a starting point.
@@ -54,6 +54,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-11-15 (shift 29): The Opinion tag now shows on the home "Same story, different vantage points" cards and on `/saved` rows (closes #51). Category, topic and outlet story grids keep their sort, region and lean choices in the URL (`?sort=latest&region=Asia&lean=left`, via `history.replaceState` in new `lib/url-state-client.ts`), so a filtered view can be shared or bookmarked and the pages stay cached (closes #49). Closed #52: topic pages already had the Latest/Popular toggle, and it now sticks in the URL too. Topic pages lost a duplicate region chip row (the server one stays). Proposed #53-#55. Two tasks, lint and build pass.
 - 2026-11-14 (shift 28): `/compare` cluster headlines now carry the amber Opinion tag next to the outlet name. Category, topic and outlet story grids show "Showing X of Y stories" plus a "✕ Clear filters" chip whenever a region or lean filter is on. Proposed #51 and #52. Two tasks, lint and build pass.
 - 2026-11-13 (shift 27): Story cards (home, category, outlet and topic pages), search rows, `/popular` rows and the article header now show a small amber "Opinion" tag on pieces `isOpinion()` flags (new `components/OpinionTag.tsx`). Category pages got a lean chip row with per-lean counts that follows the region choice and combines with Hide opinion; it's in `CategoryArticles`, so `/topic/[word]` gets it too, and it hides itself on outlet pages (one lean). Closed #46: `/source/[id]` already had Hide opinion via `CategoryArticles`. Two tasks, lint and build pass.
 - 2026-11-12 (shift 26): "Hide opinion" now works on search results and category pages too (client-side toggle, so category pages stay cached; new `useHideOpinion()` hook shares the `gn_hide_opinion` cookie with the other pages; only shown when opinion pieces are present). `/compare` now explains how stories are grouped (header explainer with the real thresholds) and each cluster has a "Why these are grouped" list of the words each outlet shares. Two tasks, lint and build pass.
