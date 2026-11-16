@@ -183,7 +183,11 @@ export default async function ComparePage({
         ) : (
           <div className="mt-10 space-y-5">
             {clusters.map((c) => (
-              <section key={c.id} className="glass rounded-2xl p-6">
+              <section
+                key={c.id}
+                id={`cluster-${c.id}`}
+                className="glass scroll-mt-24 rounded-2xl p-6 target:ring-1 target:ring-cyan-400/50"
+              >
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   {c.keywords.map((k) => (
                     <span

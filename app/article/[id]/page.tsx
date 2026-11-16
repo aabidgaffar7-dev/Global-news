@@ -243,7 +243,7 @@ export default async function ArticlePage({
 
         {cluster && (
           <Link
-            href="/compare"
+            href={`/compare#cluster-${cluster.id}`}
             className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-cyan-400/25 bg-cyan-400/[0.06] px-3 py-1 text-xs text-cyan-200 transition hover:bg-cyan-400/10"
           >
             Covered by {cluster.stories.length} outlets across{" "}

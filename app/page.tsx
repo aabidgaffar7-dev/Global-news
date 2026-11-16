@@ -52,7 +52,9 @@ export default async function Home({
     const q = p.toString();
     return q ? `/?${q}` : "/";
   };
-  const clusters = clusterCoverage(stories, { limit: 3 });
+  // Cluster the same set /compare does (it honours Hide opinion too), so each
+  // card's #cluster- anchor lands on a cluster that exists there.
+  const clusters = clusterCoverage(visible, { limit: 3 });
   const topics = trendingTopics(stories);
   const active = globeLocations(stories).filter((l) => l.storyCount > 0);
   const activeCities = active.length;
@@ -203,7 +205,7 @@ export default async function Home({
               {clusters.map((c) => (
                 <li key={c.id}>
                   <Link
-                    href="/compare"
+                    href={`/compare#cluster-${c.id}`}
                     className="glass block h-full rounded-2xl p-4 transition hover:border-white/25"
                   >
                     <div className="line-clamp-2 text-sm text-slate-200">
