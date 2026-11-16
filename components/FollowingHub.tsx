@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getBrowserSupabase } from "@/lib/supabase-browser";
 import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
 import { storyPlace, timeAgo } from "@/lib/format";
+import OpinionTag from "@/components/OpinionTag";
 
 type Follow = { kind: string; value: string };
 
@@ -35,6 +36,7 @@ export type Match = {
 export type AttributedStory = {
   id: string;
   title: string;
+  link: string;
   summary?: string;
   source: string;
   lean: Lean;
@@ -818,6 +820,7 @@ function WireRow({ story }: { story: AttributedStory }) {
           <span className="text-slate-500">
             {place ? `· 📍 ${place} ` : ""}· {timeAgo(story.publishedAt)}
           </span>
+          <OpinionTag story={story} />
         </div>
         <h3 className="font-display font-medium text-[#ece8e1] group-hover:text-white">
           {story.title}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import OpinionTag from "@/components/OpinionTag";
 import { redirect } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import StoryImage from "@/components/StoryImage";
@@ -319,10 +320,13 @@ function RecCard({
               ? `interest in ${cat.label} (${readCount} read)`
               : "trending globally"}
         </div>
-        <div className="mt-2 text-[11px] text-slate-500">
-          {story.source} ·{" "}
-          {storyPlace(story) ? `📍 ${storyPlace(story)} · ` : ""}
-          {timeAgo(story.publishedAt)}
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">
+          <span>
+            {story.source} ·{" "}
+            {storyPlace(story) ? `📍 ${storyPlace(story)} · ` : ""}
+            {timeAgo(story.publishedAt)}
+          </span>
+          <OpinionTag story={story} />
         </div>
       </div>
     </Link>

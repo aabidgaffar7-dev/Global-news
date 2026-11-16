@@ -157,6 +157,7 @@ export default async function FollowingPage() {
       return {
         id: s.id,
         title: s.title,
+        link: s.link,
         summary: s.summary,
         source: s.source,
         lean: s.lean,
