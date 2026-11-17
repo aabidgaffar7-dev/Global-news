@@ -34,8 +34,6 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 43. Add "Most-discussed topics" ranking on `/topic` by reader votes/comments once vote data is exposed (proposed).
 44. Add a `/topic` search suggestion list (autocomplete from current trending words) (proposed).
 54. Add a "Copy link to this view" button next to the filter chips on category/topic/outlet pages, now that sort/region/lean live in the URL (proposed).
-56. Point the `/compare` cluster Share button at the cluster itself (`/compare#cluster-<id>`, the anchor added in shift 30) instead of a `/search` link (proposed).
-57. Honour "Hide opinion" (the `gn_hide_opinion` cookie) on `/for-you` recommendations, with the same toggle the other pages have (proposed).
 58. Honour "Hide opinion" on the `/following` wire too, as a client-side toggle in `FollowingHub` (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
@@ -55,6 +53,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-11-17 (shift 31): The Share button on each `/compare` cluster now shares that cluster itself (`/compare?<current filters>#cluster-<id>`, keeping the opinion setting so it groups the same for the recipient) instead of a `/search` link (closes #56). `/for-you` recommendations honour "Hide opinion" (cookie, `?opinion=` wins) with a toggle beside the heading and an "all caught up" empty state (closes #57). Two tasks, lint and build pass.
 - 2026-11-16 (shift 30): Home "Same story, different vantage points" cards and the article page's "Covered by N outlets" chip now jump straight to their own cluster on `/compare` (`#cluster-<id>` anchors, scroll margin for the sticky header, ring highlight on the targeted cluster); the home strip now clusters the same opinion-filtered set as `/compare` so the anchors line up (closes #53). The amber Opinion tag now shows on `/for-you`, `/following` and `/history` rows (closes #55). Proposed #56-#58. Two tasks, lint and build pass.
 - 2026-11-15 (shift 29): The Opinion tag now shows on the home "Same story, different vantage points" cards and on `/saved` rows (closes #51). Category, topic and outlet story grids keep their sort, region and lean choices in the URL (`?sort=latest&region=Asia&lean=left`, via `history.replaceState` in new `lib/url-state-client.ts`), so a filtered view can be shared or bookmarked and the pages stay cached (closes #49). Closed #52: topic pages already had the Latest/Popular toggle, and it now sticks in the URL too. Topic pages lost a duplicate region chip row (the server one stays). Proposed #53-#55. Two tasks, lint and build pass.
 - 2026-11-14 (shift 28): `/compare` cluster headlines now carry the amber Opinion tag next to the outlet name. Category, topic and outlet story grids show "Showing X of Y stories" plus a "✕ Clear filters" chip whenever a region or lean filter is on. Proposed #51 and #52. Two tasks, lint and build pass.
