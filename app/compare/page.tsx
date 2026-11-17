@@ -208,13 +208,18 @@ export default async function ComparePage({
                       Search this topic →
                     </Link>
                   )}
-                  {c.keywords.length > 0 && (
-                    <ShareButton
-                      compact
-                      title={`How outlets cover: ${c.keywords.join(" ")}`}
-                      path={`/search?q=${encodeURIComponent(c.keywords.join(" "))}`}
-                    />
-                  )}
+                  {/* Shares this cluster itself, keeping the current filters
+                      (incl. opinion, which changes how stories group) so the
+                      #cluster- anchor lands on the same cluster. */}
+                  <ShareButton
+                    compact
+                    title={
+                      c.keywords.length > 0
+                        ? `How outlets cover: ${c.keywords.join(" ")}`
+                        : `How outlets cover: ${c.stories[0].title}`
+                    }
+                    path={`${href(activeLean, activeRegion)}#cluster-${c.id}`}
+                  />
                 </div>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   {LEAN_ORDER.filter((l) => c.leans.includes(l)).map((lean) => (
