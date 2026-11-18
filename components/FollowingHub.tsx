@@ -1,12 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getBrowserSupabase } from "@/lib/supabase-browser";
 import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
 import { storyPlace, timeAgo } from "@/lib/format";
 import OpinionTag from "@/components/OpinionTag";
+import { isOpinion } from "@/lib/compare";
+import { useHideOpinion } from "@/lib/opinion-client";
 
 type Follow = { kind: string; value: string };
 
@@ -53,6 +55,9 @@ export type AttributedStory = {
 // Collapsed previews so these (growing) lists don't dominate the page.
 const SOURCE_PREVIEW = 6;
 const LOCATION_PREVIEW = 8;
+// Rows shown on the Live Wire (the server sends a few extra so hiding
+// opinion pieces doesn't leave it short).
+const WIRE_SIZE = 30;
 
 export default function FollowingHub({
   userId,
@@ -78,6 +83,20 @@ export default function FollowingHub({
     refreshTimer.current = setTimeout(() => router.refresh(), 800);
   }
   const [follows, setFollows] = useState<Follow[]>(initialFollows);
+  // "Hide opinion" shares the gn_hide_opinion cookie with the other pages.
+  const [hideOpinion, setHideOpinion] = useHideOpinion();
+  const opinionCount = useMemo(
+    () => feed.slice(0, WIRE_SIZE).filter((s) => isOpinion(s)).length,
+    [feed],
+  );
+  const wire = useMemo(
+    () =>
+      (hideOpinion ? feed.filter((s) => !isOpinion(s)) : feed).slice(
+        0,
+        WIRE_SIZE,
+      ),
+    [feed, hideOpinion],
+  );
   const [keyword, setKeyword] = useState("");
   const [pending, setPending] = useState<Set<string>>(new Set());
   const [sourceSort, setSourceSort] = useState<"all" | "lean" | "region">("all");
@@ -220,7 +239,7 @@ export default function FollowingHub({
 
   return (
     <div className="space-y-12">
-      <StatRibbon counts={counts} feedLength={feed.length} />
+      <StatRibbon counts={counts} feedLength={wire.length} />
 
       <LeanBalanceMeter leanCounts={leanCounts} total={counts.sources} />
 
@@ -381,7 +400,7 @@ export default function FollowingHub({
 
       {/* ── Live Wire ── */}
       <section id="wire" className="scroll-mt-[130px]">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <h2 className="font-display text-2xl font-medium text-[#ece8e1]">
             Live <span className="aurora-text italic">Wire</span>
           </h2>
@@ -389,8 +408,27 @@ export default function FollowingHub({
             <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-cyan-400" />
             Live
           </span>
-          {feed.length > 0 && (
-            <span className="text-sm text-slate-500">{feed.length} stories</span>
+          {wire.length > 0 && (
+            <span className="text-sm text-slate-500">{wire.length} stories</span>
+          )}
+          {(opinionCount > 0 || hideOpinion) && (
+            <button
+              type="button"
+              onClick={() => setHideOpinion(!hideOpinion)}
+              aria-pressed={hideOpinion}
+              title={
+                hideOpinion
+                  ? "Show opinion, editorial and analysis pieces again"
+                  : `${opinionCount} opinion piece${opinionCount === 1 ? "" : "s"} on your wire`
+              }
+              className={`ml-auto rounded-full border px-2.5 py-1 text-xs transition ${
+                hideOpinion
+                  ? "border-transparent bg-white/10 text-white"
+                  : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+              }`}
+            >
+              {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
+            </button>
           )}
         </div>
 
@@ -415,13 +453,15 @@ export default function FollowingHub({
               </a>
             </div>
           </div>
-        ) : feed.length === 0 ? (
+        ) : wire.length === 0 ? (
           <p className="glass mt-4 rounded-2xl p-8 text-center text-slate-400">
-            Nothing on the wire from your follows right now — check back soon.
+            {feed.length > 0
+              ? "Only opinion pieces on your wire right now. Turn off “Hide opinion” to see them."
+              : "Nothing on the wire from your follows right now — check back soon."}
           </p>
         ) : (
           <ul className="mt-4 space-y-3">
-            {feed.map((story) => (
+            {wire.map((story) => (
               <WireRow key={story.id} story={story} />
             ))}
           </ul>
