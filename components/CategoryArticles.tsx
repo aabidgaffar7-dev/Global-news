@@ -10,6 +10,7 @@ import { storyPlace, timeAgo } from "@/lib/format";
 import { isOpinion } from "@/lib/compare";
 import { useHideOpinion } from "@/lib/opinion-client";
 import { useUrlParams } from "@/lib/url-state-client";
+import CopyViewLink from "@/components/CopyViewLink";
 import type { Story } from "@/lib/news";
 
 // Articles arrive already score-sorted (Most Popular). The toggle re-sorts
@@ -75,6 +76,7 @@ export default function CategoryArticles({
   for (const a of inRegion) leanCounts.set(a.lean, (leanCounts.get(a.lean) ?? 0) + 1);
   const leans = LEAN_ORDER.filter((l) => leanCounts.has(l) || l === lean);
   const leanAvailable = new Set(base.map((a) => a.lean)).size > 1;
+  const filtered = region !== "all" || lean !== "all";
   const pool =
     lean === "all" ? inRegion : inRegion.filter((a) => a.lean === lean);
   const sorted = [...pool].sort((a, b) =>
@@ -194,20 +196,25 @@ export default function CategoryArticles({
         </div>
       )}
 
-      {(region !== "all" || lean !== "all") && (
+      {(filtered || sort === "latest") && (
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-          <span>
-            Showing {sorted.length} of {base.length} stories
-          </span>
-          <button
-            onClick={() => {
-              setParams({ region: null, lean: null });
-              setShown(PAGE);
-            }}
-            className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-slate-300 transition hover:bg-white/[0.07]"
-          >
-            ✕ Clear filters
-          </button>
+          {filtered && (
+            <>
+              <span>
+                Showing {sorted.length} of {base.length} stories
+              </span>
+              <button
+                onClick={() => {
+                  setParams({ region: null, lean: null });
+                  setShown(PAGE);
+                }}
+                className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-slate-300 transition hover:bg-white/[0.07]"
+              >
+                ✕ Clear filters
+              </button>
+            </>
+          )}
+          <CopyViewLink />
         </div>
       )}
 
