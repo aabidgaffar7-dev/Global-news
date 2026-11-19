@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { OPINION_COOKIE, resolveOpinion } from "@/lib/opinion";
 import ShareButton from "@/components/ShareButton";
+import CopyViewLink from "@/components/CopyViewLink";
 import OpinionTag from "@/components/OpinionTag";
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
@@ -172,6 +173,11 @@ export default async function ComparePage({
               {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
             </Pill>
           </nav>
+        )}
+        {(activeLean || activeRegion || activeSort === "outlets" || hideOpinion) && (
+          <div className="mt-3 flex justify-center text-xs">
+            <CopyViewLink path={href(activeLean, activeRegion)} />
+          </div>
         )}
 
         {clusters.length === 0 ? (

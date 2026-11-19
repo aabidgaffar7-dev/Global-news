@@ -4,6 +4,7 @@ import { OPINION_COOKIE, resolveOpinion } from "@/lib/opinion";
 import SiteHeader from "@/components/SiteHeader";
 import StoryImage from "@/components/StoryImage";
 import RankInfo from "@/components/RankInfo";
+import CopyViewLink from "@/components/CopyViewLink";
 import { getAllStories, type Story } from "@/lib/news";
 import { getWindowPopularity } from "@/lib/engagement";
 import { normalizeUrl } from "@/lib/url";
@@ -203,6 +204,19 @@ export default async function PopularPage({
               {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
             </FilterPill>
           </div>
+          {(activeCat || activeRegion || activeLean || hideOpinion || win.key !== "all") && (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <CopyViewLink path={qp({})} />
+              {(activeCat || activeRegion || activeLean || win.key !== "all") && (
+                <Link
+                  href={qp({ cat: null, region: null, lean: null, when: "all" })}
+                  className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-slate-400 transition hover:border-white/25 hover:text-white"
+                >
+                  ✕ Clear filters
+                </Link>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Leaderboard */}
