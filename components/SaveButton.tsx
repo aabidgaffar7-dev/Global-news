@@ -18,16 +18,31 @@ export default function SaveButton({
   userId,
   initialSaved,
   story,
+  compact = false,
 }: {
   userId: string | null;
   initialSaved: boolean;
   story: SaveStory;
+  /** Small star-only variant for dense lists (e.g. /compare clusters). */
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState(initialSaved);
   const [pending, setPending] = useState(false);
 
   if (!userId) {
+    if (compact) {
+      return (
+        <Link
+          href="/login"
+          title="Sign in to save articles"
+          aria-label="Sign in to save this article"
+          className="text-slate-500 transition hover:text-cyan-300"
+        >
+          ☆ Save
+        </Link>
+      );
+    }
     return (
       <Link
         href="/login"
@@ -68,6 +83,22 @@ export default function SaveButton({
     if (error) setSaved(!next); // rollback to match the DB
     setPending(false);
     router.refresh();
+  }
+
+  if (compact) {
+    return (
+      <button
+        onClick={toggle}
+        disabled={pending}
+        aria-pressed={saved}
+        title={saved ? "Remove from saved" : "Save for later"}
+        className={`transition disabled:opacity-60 ${
+          saved ? "text-amber-300 hover:text-amber-200" : "text-slate-500 hover:text-cyan-300"
+        }`}
+      >
+        {saved ? "★ Saved" : "☆ Save"}
+      </button>
+    );
   }
 
   return (

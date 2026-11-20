@@ -2,6 +2,8 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { OPINION_COOKIE, resolveOpinion } from "@/lib/opinion";
 import ShareButton from "@/components/ShareButton";
+import SaveButton from "@/components/SaveButton";
+import { getUser, getServerSupabase } from "@/lib/supabase-server";
 import CopyViewLink from "@/components/CopyViewLink";
 import OpinionTag from "@/components/OpinionTag";
 import type { Metadata } from "next";
@@ -54,6 +56,19 @@ export default async function ComparePage({
     clusters.sort(
       (a, b) => b.stories.length - a.stories.length || b.score - a.score,
     );
+  }
+  // Which of the shown headlines this reader already saved: one query for
+  // every story on the page. Resilient if the `saved` table is missing.
+  const user = await getUser();
+  const savedLinks = new Set<string>();
+  if (user && clusters.length > 0) {
+    const links = clusters.flatMap((c) => c.stories.map((s) => s.link));
+    const { data } = await (await getServerSupabase())
+      .from("saved")
+      .select("link")
+      .eq("user_id", user.id)
+      .in("link", links);
+    for (const row of data ?? []) savedLinks.add(row.link as string);
   }
   const href = (
     l: Lean | null,
@@ -253,6 +268,19 @@ export default async function ComparePage({
                               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                                 <span>{s.source}</span>
                                 <OpinionTag story={s} />
+                                <SaveButton
+                                  compact
+                                  userId={user?.id ?? null}
+                                  initialSaved={savedLinks.has(s.link)}
+                                  story={{
+                                    storyId: s.id,
+                                    link: s.link,
+                                    title: s.title,
+                                    source: s.source,
+                                    category: s.category,
+                                    imageUrl: s.imageUrl,
+                                  }}
+                                />
                               </div>
                             </li>
                           ))}
