@@ -190,8 +190,18 @@ export default async function ComparePage({
           </nav>
         )}
         {(activeLean || activeRegion || activeSort === "outlets" || hideOpinion) && (
-          <div className="mt-3 flex justify-center text-xs">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs">
             <CopyViewLink path={href(activeLean, activeRegion)} />
+            {/* Resets lean, region and sort but keeps the opinion choice,
+                same as /popular. */}
+            {(activeLean || activeRegion || activeSort === "outlets") && (
+              <Link
+                href={href(null, null, "score")}
+                className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-slate-400 transition hover:border-white/25 hover:text-white"
+              >
+                ✕ Clear filters
+              </Link>
+            )}
           </div>
         )}
 
@@ -200,6 +210,17 @@ export default async function ComparePage({
             {activeLean || activeRegion
               ? "No multi-lean stories match these filters right now."
               : "No stories are being covered from multiple vantage points right now. Check back soon."}
+            {(activeLean || activeRegion) && (
+              <>
+                {" "}
+                <Link
+                  href={href(null, null, "score")}
+                  className="text-cyan-300/80 transition hover:text-cyan-300"
+                >
+                  Clear filters
+                </Link>
+              </>
+            )}
           </p>
         ) : (
           <div className="mt-10 space-y-5">
