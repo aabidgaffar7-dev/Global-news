@@ -42,6 +42,8 @@ export default function GlobeExplorer({
 }: {
   locations: GlobePoint[];
 }) {
+  // react-globe.gl exposes an untyped imperative handle.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const globeRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });

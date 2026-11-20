@@ -26,6 +26,7 @@ export default function SiteHeader() {
 
   // Close everything on navigation.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset menus on route change
     setMenuOpen(false);
     setTopicsOpen(false);
   }, [pathname]);
@@ -200,6 +201,7 @@ export default function SiteHeader() {
                   ["Community", "/community"],
                   ["Polls", "/polls"],
                   ["Popular", "/popular"],
+                  ["Compare", "/compare"],
                   ["Saved", "/saved"],
                   ["History", "/history"],
                   ["About", "/about"],

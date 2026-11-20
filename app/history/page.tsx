@@ -1,4 +1,5 @@
 import Link from "next/link";
+import OpinionTag from "@/components/OpinionTag";
 import { redirect } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import StoryImage from "@/components/StoryImage";
@@ -107,6 +108,7 @@ export default async function HistoryPage() {
                           </span>
                         )}
                         <span>· read {timeAgo(r.viewed_at)}</span>
+                        <OpinionTag story={{ link: r.link, title: r.title ?? "" }} />
                         {external && (
                           <span className="text-slate-500">· source ↗</span>
                         )}

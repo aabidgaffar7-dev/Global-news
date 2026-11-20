@@ -1,28 +1,85 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import StoryImage from "@/components/StoryImage";
-import { LEAN_META } from "@/lib/feeds";
+import OpinionTag from "@/components/OpinionTag";
+import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
+import { REGIONS, regionOf } from "@/lib/regions";
 import { storyPlace, timeAgo } from "@/lib/format";
+import { isOpinion } from "@/lib/compare";
+import { useHideOpinion } from "@/lib/opinion-client";
+import { useUrlParams } from "@/lib/url-state-client";
+import CopyViewLink from "@/components/CopyViewLink";
 import type { Story } from "@/lib/news";
 
 // Articles arrive already score-sorted (Most Popular). The toggle re-sorts
 // client-side so readers can flip to chronological without a round-trip.
+// Sort, region and lean live in the URL (?sort=latest&region=Asia&lean=left)
+// via replaceState, so a filtered view can be shared while the page stays
+// cached.
 const PAGE = 24;
 
 export default function CategoryArticles({
   articles,
   color,
   label,
+  showRegion = true,
 }: {
   articles: Story[];
   color: string;
   label: string;
+  /** False where the page already filters by region server-side (topics). */
+  showRegion?: boolean;
 }) {
-  const [sort, setSort] = useState<"popular" | "latest">("popular");
+  const [params, setParams] = useUrlParams();
+  const sort: "popular" | "latest" =
+    params.get("sort") === "latest" ? "latest" : "popular";
+  const urlRegion = params.get("region");
+  const region =
+    showRegion && REGIONS.some((r) => r === urlRegion) ? urlRegion! : "all";
+  const urlLean = params.get("lean");
+  const lean: Lean | "all" =
+    LEAN_ORDER.find((l) => l === urlLean) ?? "all";
+  const setSort = (v: "popular" | "latest") =>
+    setParams({ sort: v === "latest" ? v : null });
+  const setRegion = (v: string) =>
+    setParams({ region: v === "all" ? null : v });
+  const setLean = (v: Lean | "all") =>
+    setParams({ lean: v === "all" ? null : v });
   const [shown, setShown] = useState(PAGE);
-  const sorted = [...articles].sort((a, b) =>
+  const [hideOpinion, setHideOpinion] = useHideOpinion();
+  const opinionCount = useMemo(
+    () => articles.filter((a) => isOpinion(a)).length,
+    [articles],
+  );
+  const base = useMemo(
+    () => (hideOpinion ? articles.filter((a) => !isOpinion(a)) : articles),
+    [articles, hideOpinion],
+  );
+  const regionCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const a of base) {
+      const r = regionOf(a.country);
+      m.set(r, (m.get(r) ?? 0) + 1);
+    }
+    return m;
+  }, [base]);
+  const regions = showRegion ? REGIONS.filter((r) => regionCounts.has(r)) : [];
+  const inRegion =
+    region === "all"
+      ? base
+      : base.filter((a) => regionOf(a.country) === region);
+  // Lean counts follow the region choice, so the chips show what's actually
+  // there. Outlet pages have a single lean, so the row hides itself.
+  const leanCounts = new Map<Lean, number>();
+  for (const a of inRegion) leanCounts.set(a.lean, (leanCounts.get(a.lean) ?? 0) + 1);
+  const leans = LEAN_ORDER.filter((l) => leanCounts.has(l) || l === lean);
+  const leanAvailable = new Set(base.map((a) => a.lean)).size > 1;
+  const filtered = region !== "all" || lean !== "all";
+  const pool =
+    lean === "all" ? inRegion : inRegion.filter((a) => a.lean === lean);
+  const sorted = [...pool].sort((a, b) =>
     sort === "latest"
       ? new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
       : b.score - a.score,
@@ -59,10 +116,117 @@ export default function CategoryArticles({
         </div>
       </div>
 
+      {(regions.length > 1 || opinionCount > 0) && (
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {regions.length > 1 && ["all", ...regions].map((r) => (
+            <button
+              key={r}
+              onClick={() => {
+                setRegion(r);
+                setShown(PAGE);
+              }}
+              className={`rounded-full border px-2.5 py-1 text-xs transition ${
+                region === r
+                  ? "border-transparent bg-white/10 text-white"
+                  : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+              }`}
+            >
+              {r === "all"
+                ? "All regions"
+                : `🌍 ${r} · ${regionCounts.get(r)}`}
+            </button>
+          ))}
+          {opinionCount > 0 && (
+            <button
+              onClick={() => {
+                setHideOpinion(!hideOpinion);
+                setShown(PAGE);
+              }}
+              aria-pressed={hideOpinion}
+              title={`${opinionCount} opinion piece${opinionCount === 1 ? "" : "s"} in this section`}
+              className={`ml-auto rounded-full border px-2.5 py-1 text-xs transition ${
+                hideOpinion
+                  ? "border-transparent bg-white/10 text-white"
+                  : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+              }`}
+            >
+              {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {leanAvailable && (
+        <div className="mb-4 flex flex-wrap gap-1.5" aria-label="Filter by outlet lean">
+          <button
+            onClick={() => {
+              setLean("all");
+              setShown(PAGE);
+            }}
+            aria-pressed={lean === "all"}
+            className={`rounded-full border px-2.5 py-1 text-xs transition ${
+              lean === "all"
+                ? "border-transparent bg-white/10 text-white"
+                : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+            }`}
+          >
+            Any lean
+          </button>
+          {leans.map((l) => (
+            <button
+              key={l}
+              onClick={() => {
+                setLean(l);
+                setShown(PAGE);
+              }}
+              aria-pressed={lean === l}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
+                lean === l
+                  ? "border-transparent bg-white/10 text-white"
+                  : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+              }`}
+            >
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ background: LEAN_META[l].color }}
+              />
+              {LEAN_META[l].label} · {leanCounts.get(l) ?? 0}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {(filtered || sort === "latest") && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+          {filtered && (
+            <>
+              <span>
+                Showing {sorted.length} of {base.length} stories
+              </span>
+              <button
+                onClick={() => {
+                  setParams({ region: null, lean: null });
+                  setShown(PAGE);
+                }}
+                className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-slate-300 transition hover:bg-white/[0.07]"
+              >
+                ✕ Clear filters
+              </button>
+            </>
+          )}
+          <CopyViewLink />
+        </div>
+      )}
+
       {sorted.length === 0 ? (
         <p className="glass rounded-xl p-8 text-center text-slate-400">
-          No {label.toLowerCase()} stories in the feed right now — check back
-          soon.
+          {base.length === 0 && articles.length > 0
+            ? `Only opinion pieces in ${label.toLowerCase()} right now. Turn off "Hide opinion" to see them.`
+            : inRegion.length > 0 && lean !== "all"
+            ? `No ${LEAN_META[lean].label.toLowerCase()} outlets have ${label.toLowerCase()} stories${region === "all" ? "" : " from this region"} right now.`
+            : articles.length > 0
+            ? `No ${label.toLowerCase()} stories from this region right now.`
+            : `No ${label.toLowerCase()} stories in the feed right now — check back soon.`}
         </p>
       ) : (
         <>
@@ -133,6 +297,7 @@ function ArticleCard({
           >
             {lean.label}
           </span>
+          <OpinionTag story={story} />
           <span className="ml-auto">
             {storyPlace(story) ? `📍 ${storyPlace(story)} · ` : ""}
             {timeAgo(story.publishedAt)}

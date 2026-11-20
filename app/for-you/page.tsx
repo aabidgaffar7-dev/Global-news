@@ -1,5 +1,9 @@
 import Link from "next/link";
+import OpinionTag from "@/components/OpinionTag";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { isOpinion } from "@/lib/compare";
+import { OPINION_COOKIE, resolveOpinion } from "@/lib/opinion";
 import SiteHeader from "@/components/SiteHeader";
 import StoryImage from "@/components/StoryImage";
 import { getUser, getServerSupabase } from "@/lib/supabase-server";
@@ -11,9 +15,18 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "For You" };
 
-export default async function ForYouPage() {
+export default async function ForYouPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ opinion?: string }>;
+}) {
   const user = await getUser();
   if (!user) redirect("/login");
+  const { opinion } = await searchParams;
+  const { hide: hideOpinion, paramFor: opinionParam } = resolveOpinion(
+    opinion,
+    (await cookies()).get(OPINION_COOKIE)?.value,
+  );
 
   const sb = await getServerSupabase();
   // Recent reads are the interest signal (old stories aren't in the live feed
@@ -37,7 +50,16 @@ export default async function ForYouPage() {
   const hasInterests = interests.length > 0;
 
   const stories = await getAllStories();
-  const unread = stories.filter((s) => !readLinks.has(s.link));
+  const unreadAll = stories.filter((s) => !readLinks.has(s.link));
+  // Same "Hide opinion" choice as the rest of the site (cookie, URL wins).
+  const hasOpinion = unreadAll.some(isOpinion);
+  const unread = hideOpinion
+    ? unreadAll.filter((s) => !isOpinion(s))
+    : unreadAll;
+  const opinionToggle = (() => {
+    const op = opinionParam(!hideOpinion);
+    return op ? `/for-you?opinion=${op}` : "/for-you";
+  })();
 
   // Interleave recommendations across the reader's top categories (round-
   // robin, so one dominant interest can't monopolize all 9 slots), and
@@ -169,18 +191,37 @@ export default async function ForYouPage() {
           </>
         )}
 
-        <h2 className="font-display mt-12 text-xl font-medium text-[#ece8e1]">
-          {totalRead === 0 ? (
-            <>
-              Popular <span className="aurora-text italic">Now</span>
-            </>
-          ) : (
-            <>
-              Personalized{" "}
-              <span className="aurora-text italic">Recommendations</span>
-            </>
+        <div className="mt-12 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-xl font-medium text-[#ece8e1]">
+            {totalRead === 0 ? (
+              <>
+                Popular <span className="aurora-text italic">Now</span>
+              </>
+            ) : (
+              <>
+                Personalized{" "}
+                <span className="aurora-text italic">Recommendations</span>
+              </>
+            )}
+          </h2>
+          {(hasOpinion || hideOpinion) && (
+            <Link
+              href={opinionToggle}
+              className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                hideOpinion
+                  ? "border-transparent bg-white/10 text-white"
+                  : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+              }`}
+            >
+              {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
+            </Link>
           )}
-        </h2>
+        </div>
+        {recommendations.length === 0 && (
+          <p className="glass mt-5 rounded-2xl p-8 text-center text-slate-400">
+            You&apos;re all caught up — nothing new to recommend right now.
+          </p>
+        )}
         <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {recommendations.map(({ story, discover }) => (
             <RecCard
@@ -319,10 +360,13 @@ function RecCard({
               ? `interest in ${cat.label} (${readCount} read)`
               : "trending globally"}
         </div>
-        <div className="mt-2 text-[11px] text-slate-500">
-          {story.source} ·{" "}
-          {storyPlace(story) ? `📍 ${storyPlace(story)} · ` : ""}
-          {timeAgo(story.publishedAt)}
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">
+          <span>
+            {story.source} ·{" "}
+            {storyPlace(story) ? `📍 ${storyPlace(story)} · ` : ""}
+            {timeAgo(story.publishedAt)}
+          </span>
+          <OpinionTag story={story} />
         </div>
       </div>
     </Link>

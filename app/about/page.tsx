@@ -104,6 +104,12 @@ export default function AboutPage() {
               </span>
             ))}
           </div>
+          <Link
+            href="/sources"
+            className="mt-4 inline-block text-sm text-cyan-300/80 transition hover:text-cyan-200"
+          >
+            See every rated outlet →
+          </Link>
         </section>
 
         <div className="mt-10 text-center">

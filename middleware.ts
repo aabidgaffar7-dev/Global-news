@@ -1,5 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { OPINION_COOKIE, OPINION_COOKIE_MAX_AGE } from "@/lib/opinion";
+
+// Remember an explicit ?opinion=hide|show choice so it sticks across pages.
+function rememberOpinion(request: NextRequest, response: NextResponse) {
+  const choice = request.nextUrl.searchParams.get("opinion");
+  if (choice === "hide" || choice === "show") {
+    response.cookies.set(OPINION_COOKIE, choice === "hide" ? "1" : "0", {
+      path: "/",
+      maxAge: OPINION_COOKIE_MAX_AGE,
+      sameSite: "lax",
+    });
+  }
+  return response;
+}
 
 // Refreshes the Supabase auth session cookie on each request so server
 // components see a valid user. No-op when Supabase isn't configured.
@@ -8,7 +22,7 @@ export async function middleware(request: NextRequest) {
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   let response = NextResponse.next({ request });
-  if (!url || !anon) return response;
+  if (!url || !anon) return rememberOpinion(request, response);
 
   const supabase = createServerClient(url, anon, {
     cookies: {
@@ -50,7 +64,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(login);
   }
 
-  return response;
+  return rememberOpinion(request, response);
 }
 
 export const config = {
