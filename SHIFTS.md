@@ -34,9 +34,8 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 44. Add a `/topic` search suggestion list (autocomplete from current trending words) (proposed).
 59. Rename `middleware.ts` to `proxy.ts` (the build warns the "middleware" convention is deprecated in this Next.js version; check `node_modules/next/dist/docs/` for the proxy API first) (proposed).
 62. Add a lean filter chip row to `/saved` (needs the outlet lean resolved server-side in `app/saved/page.tsx` from the source name/live feed) (proposed).
-64. Add a "Hide opinion" toggle to `/history` (client-side `useHideOpinion()`, same as `/saved`) (proposed).
 65. Add the compact Save star (`<SaveButton compact>`) to `/popular` leaderboard rows; `/popular` is ISR, so load saved state client-side or make it dynamic (proposed).
-66. Add the compact Save star to search result rows (`components/SearchResults.tsx`, client component; fetch the reader's saved links once in the browser) (proposed).
+67. Add the compact Save star to `/history` rows (now a client list in `components/HistoryList.tsx`; saved links can be loaded server-side in `app/history/page.tsx`, which is already dynamic) (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
 Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle East, Africa, SE Asia, Latin America and Korea/Turkey. Suggested leans are only a starting point.
@@ -55,6 +54,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-11-21 (shift 35): `/history` has a "Hide opinion" toggle (list moved into new client `components/HistoryList.tsx` using the shared `useHideOpinion()` cookie; shown only when opinion pieces are present; empty state when only opinion is left) (closes #64). Search result rows now have the compact "☆ Save" star: `/search` stays cached, the reader's saved links (newest 500) load once in the browser, and `SaveButton` got `refresh`/`onChange` props so saving doesn't re-run the web search (closes #66). Proposed #67. Two tasks, lint and build pass.
 - 2026-11-20 (shift 34): Every headline in a `/compare` cluster now has a small "☆ Save" star (new `compact` variant of `SaveButton`; saved state for the whole page loads in one query; signed-out readers get a sign-in link). `/compare` was already dynamic (it reads the opinion cookie), so no ISR problem (closes #26). `/compare` got a "✕ Clear filters" chip (resets lean, region and sort, keeps the opinion setting) and its filtered empty state links to it (closes #63). Proposed #65-#66. Two tasks, lint and build pass.
 - 2026-11-19 (shift 33): `/popular` and `/compare` now show "🔗 Copy link to this view" whenever a filter is on; `CopyViewLink` takes the page's canonical path so the link also carries a cookie-stored Hide opinion choice. `/popular` also got a "✕ Clear filters" chip (keeps the opinion setting) (closes #60). `/saved` has a "Hide opinion" toggle (same cookie, shown only when saved opinion pieces exist, empty state if only opinion is left) (closes #61). Proposed #62-#64. Two tasks, lint and build pass.
 - 2026-11-18 (shift 32): The `/following` Live Wire now has a "Hide opinion" toggle (shares the `gn_hide_opinion` cookie; server sends up to 45 rows so the 30-row wire stays full after filtering; empty state when only opinion is left) (closes #58). Category, topic and outlet story grids got a "🔗 Copy link to this view" button whenever a region, lean or Latest sort is on (new `components/CopyViewLink.tsx`) (closes #54). Proposed #59-#61. Two tasks, lint and build pass.
