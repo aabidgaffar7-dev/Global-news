@@ -19,12 +19,19 @@ export default function SaveButton({
   initialSaved,
   story,
   compact = false,
+  refresh = true,
+  onChange,
 }: {
   userId: string | null;
   initialSaved: boolean;
   story: SaveStory;
   /** Small star-only variant for dense lists (e.g. /compare clusters). */
   compact?: boolean;
+  /** Re-render server components after a change. Off where a refresh would
+   *  redo expensive work (e.g. /search re-querying the web). */
+  refresh?: boolean;
+  /** Called with the new state once the database write succeeds. */
+  onChange?: (saved: boolean) => void;
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState(initialSaved);
@@ -81,8 +88,9 @@ export default function SaveButton({
           .eq("link", story.link);
 
     if (error) setSaved(!next); // rollback to match the DB
+    else onChange?.(next);
     setPending(false);
-    router.refresh();
+    if (refresh) router.refresh();
   }
 
   if (compact) {
