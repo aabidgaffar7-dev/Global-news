@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { getBrowserSupabase } from "@/lib/supabase-browser";
 
 export type SaveStory = {
-  storyId: string;
+  /** In-app article id while the story is live; null once it has rotated out. */
+  storyId: string | null;
   link: string;
   title: string;
   source: string;

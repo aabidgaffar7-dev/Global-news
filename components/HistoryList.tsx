@@ -3,6 +3,7 @@
 import Link from "next/link";
 import StoryImage from "@/components/StoryImage";
 import OpinionTag from "@/components/OpinionTag";
+import SaveButton from "@/components/SaveButton";
 import { CATEGORY_META, type Category } from "@/lib/categories";
 import { timeAgo } from "@/lib/format";
 import { isOpinion } from "@/lib/compare";
@@ -20,9 +21,21 @@ export type HistoryItem = {
   external: boolean;
   imageUrl: string | null;
   lean: { label: string; color: string } | null;
+  // In-app article id while live (stored with a save), else null.
+  storyId: string | null;
 };
 
-export default function HistoryList({ items }: { items: HistoryItem[] }) {
+export default function HistoryList({
+  items,
+  userId,
+  savedLinks,
+}: {
+  items: HistoryItem[];
+  userId: string;
+  /** Links from this list the reader has already saved. */
+  savedLinks: string[];
+}) {
+  const saved = new Set(savedLinks);
   // Same remembered "Hide opinion" choice as the rest of the site.
   const [hideOpinion, setHideOpinion] = useHideOpinion();
   const asStory = (r: HistoryItem) => ({ link: r.link, title: r.title ?? "" });
@@ -80,12 +93,12 @@ export default function HistoryList({ items }: { items: HistoryItem[] }) {
               ? CATEGORY_META[r.category as Category]
               : null;
             return (
-              <li key={r.link}>
+              <li key={r.link} className="relative">
                 <Link
                   href={r.href}
                   target={r.external ? "_blank" : undefined}
                   rel={r.external ? "noopener noreferrer" : undefined}
-                  className="group glass flex items-center gap-4 rounded-2xl p-3 transition hover:-translate-y-0.5 hover:border-white/25"
+                  className="group glass flex items-center gap-4 rounded-2xl p-3 pr-20 transition hover:-translate-y-0.5 hover:border-white/25"
                 >
                   <div className="relative hidden h-16 w-24 shrink-0 overflow-hidden rounded-lg sm:block">
                     <StoryImage
@@ -125,6 +138,23 @@ export default function HistoryList({ items }: { items: HistoryItem[] }) {
                     </div>
                   </div>
                 </Link>
+                {/* Outside the link so the star doesn't open the article. */}
+                <div className="absolute right-3 top-3 text-[11px]">
+                  <SaveButton
+                    compact
+                    refresh={false}
+                    userId={userId}
+                    initialSaved={saved.has(r.link)}
+                    story={{
+                      storyId: r.storyId,
+                      link: r.link,
+                      title: r.title ?? "",
+                      source: r.source ?? "",
+                      category: r.category ?? "",
+                      imageUrl: r.imageUrl ?? undefined,
+                    }}
+                  />
+                </div>
               </li>
             );
           })}

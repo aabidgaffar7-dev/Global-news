@@ -48,8 +48,24 @@ export default async function HistoryPage() {
       lean: s
         ? { label: LEAN_META[s.lean].label, color: LEAN_META[s.lean].color }
         : null,
+      storyId: s?.id ?? null,
     };
   });
+
+  // Which of these reads the reader already saved: one query for the page.
+  // Resilient if the `saved` table is missing (stars just start empty).
+  const savedLinks: string[] = [];
+  if (rows.length > 0) {
+    const { data: savedRows } = await sb
+      .from("saved")
+      .select("link")
+      .eq("user_id", user.id)
+      .in(
+        "link",
+        rows.map((r) => r.link),
+      );
+    for (const row of savedRows ?? []) savedLinks.push(row.link as string);
+  }
 
   return (
     <div className="min-h-screen text-slate-200">
@@ -70,7 +86,11 @@ export default async function HistoryPage() {
           {rows.length === 1 ? "story" : "stories"}.
         </p>
 
-        <HistoryList items={items} />
+        <HistoryList
+          items={items}
+          userId={user.id}
+          savedLinks={savedLinks}
+        />
       </main>
     </div>
   );
