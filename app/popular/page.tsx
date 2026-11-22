@@ -17,6 +17,8 @@ import { LEAN_META, type Lean } from "@/lib/feeds";
 import { REGIONS, regionOf } from "@/lib/regions";
 import { isOpinion } from "@/lib/compare";
 import OpinionTag from "@/components/OpinionTag";
+import SaveButton from "@/components/SaveButton";
+import { getUser, getServerSupabase } from "@/lib/supabase-server";
 import { formatCount, storyPlace, timeAgo } from "@/lib/format";
 
 export const revalidate = 600;
@@ -89,6 +91,23 @@ export default async function PopularPage({
     )
     .sort((a, b) => wp(b) - wp(a) || b.score - a.score)
     .slice(0, 40);
+
+  // Reading the opinion cookie already makes this page per-request, so the
+  // reader's saved state can load here: one query for every row shown.
+  // Resilient if the `saved` table is missing (stars just start empty).
+  const user = await getUser();
+  const savedLinks = new Set<string>();
+  if (user && filtered.length > 0) {
+    const { data } = await (await getServerSupabase())
+      .from("saved")
+      .select("link")
+      .eq("user_id", user.id)
+      .in(
+        "link",
+        filtered.map((s) => s.link),
+      );
+    for (const row of data ?? []) savedLinks.add(row.link as string);
+  }
 
   // Build a URL keeping the other filter intact.
   const qp = (next: {
@@ -227,7 +246,13 @@ export default async function PopularPage({
         ) : (
           <ol className="mt-7 space-y-3">
             {filtered.map((story, i) => (
-              <RankRow key={story.id} story={story} rank={i + 1} />
+              <RankRow
+                key={story.id}
+                story={story}
+                rank={i + 1}
+                userId={user?.id ?? null}
+                saved={savedLinks.has(story.link)}
+              />
             ))}
           </ol>
         )}
@@ -272,14 +297,24 @@ const RANK_BADGE = [
   "from-emerald-400 to-teal-500",
 ];
 
-function RankRow({ story, rank }: { story: Story; rank: number }) {
+function RankRow({
+  story,
+  rank,
+  userId,
+  saved,
+}: {
+  story: Story;
+  rank: number;
+  userId: string | null;
+  saved: boolean;
+}) {
   const cat = CATEGORY_META[story.category];
   const lean = LEAN_META[story.lean];
   return (
-    <li>
+    <li className="relative">
       <Link
         href={`/article/${story.id}`}
-        className="group glass flex items-center gap-4 rounded-2xl p-3 transition hover:-translate-y-0.5 hover:border-white/25"
+        className="group glass flex items-center gap-4 rounded-2xl p-3 pr-20 transition hover:-translate-y-0.5 hover:border-white/25"
       >
         <div className="flex w-8 shrink-0 justify-center">
           {rank <= 3 ? (
@@ -327,6 +362,22 @@ function RankRow({ story, rank }: { story: Story; rank: number }) {
           </div>
         ) : null}
       </Link>
+      {/* Outside the link so the star doesn't open the article. */}
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px]">
+        <SaveButton
+          compact
+          userId={userId}
+          initialSaved={saved}
+          story={{
+            storyId: story.id,
+            link: story.link,
+            title: story.title,
+            source: story.source,
+            category: story.category,
+            imageUrl: story.imageUrl,
+          }}
+        />
+      </div>
     </li>
   );
 }
