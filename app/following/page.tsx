@@ -14,6 +14,8 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Your Newsroom" };
 
+const WIRE_BUFFER = 45;
+
 export default async function FollowingPage() {
   const user = await getUser();
   if (!user) redirect("/login");
@@ -151,12 +153,15 @@ export default async function FollowingPage() {
       (a, b) =>
         new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
     )
-    .slice(0, 30)
+    // A little headroom past the 30-row wire so the client-side "Hide opinion"
+    // toggle still fills the wire after dropping opinion pieces.
+    .slice(0, WIRE_BUFFER)
     .map((s) => {
       const cat = CATEGORY_META[s.category];
       return {
         id: s.id,
         title: s.title,
+        link: s.link,
         summary: s.summary,
         source: s.source,
         lean: s.lean,
@@ -171,6 +176,7 @@ export default async function FollowingPage() {
     });
 
   const newest = feed[0]?.publishedAt;
+  // feed may hold up to WIRE_BUFFER rows; FollowingHub shows at most 30.
   const totalFollows = follows.length;
 
   return (

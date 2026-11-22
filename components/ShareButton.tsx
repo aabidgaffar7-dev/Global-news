@@ -8,9 +8,11 @@ import { useState } from "react";
 export default function ShareButton({
   title,
   path,
+  compact = false,
 }: {
   title: string;
   path: string;
+  compact?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -37,7 +39,9 @@ export default function ShareButton({
   return (
     <button
       onClick={share}
-      className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-4 py-2 text-sm text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/[0.05]"
+      className={`inline-flex items-center gap-1.5 rounded-full border border-white/15 text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/[0.05] ${
+        compact ? "px-2.5 py-1 text-xs" : "px-4 py-2 text-sm"
+      }`}
     >
       {copied ? (
         <>Link copied ✓</>

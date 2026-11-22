@@ -1,13 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { LEAN_META, type Lean } from "@/lib/feeds";
 import { CATEGORY_META, type Category } from "@/lib/categories";
+import { REGIONS, regionOf } from "@/lib/regions";
 import { storyPlace, timeAgo } from "@/lib/format";
+import { isOpinion } from "@/lib/compare";
+import OpinionTag from "@/components/OpinionTag";
+import SaveButton from "@/components/SaveButton";
+import { getBrowserSupabase } from "@/lib/supabase-browser";
+import { supabaseEnabled } from "@/lib/supabase";
+import { useHideOpinion } from "@/lib/opinion-client";
 import type { Story } from "@/lib/news";
 
 type SourceFilter = "all" | "feeds" | "web";
+// null while loading (stars stay hidden so they never flash the wrong state).
+type SavedState = { userId: string | null; links: Set<string> } | null;
 type Sort = "relevant" | "latest";
 
 export default function SearchResults({
@@ -21,8 +30,42 @@ export default function SearchResults({
 }) {
   const [cat, setCat] = useState<Category | "all">("all");
   const [lean, setLean] = useState<Lean | "all">("all");
+  const [region, setRegion] = useState<string>("all");
   const [src, setSrc] = useState<SourceFilter>("all");
   const [sort, setSort] = useState<Sort>("relevant");
+  const [hideOpinion, setHideOpinion] = useHideOpinion();
+  const [saved, setSaved] = useState<SavedState>(null);
+  const opinionCount = useMemo(
+    () => results.filter((r) => isOpinion(r)).length,
+    [results],
+  );
+
+  // The page is cached for everyone, so the reader's saved links load once in
+  // the browser. Bounded: readers with more saves than this just see "☆ Save"
+  // on older ones, and saving again is a no-op (upsert ignores duplicates).
+  useEffect(() => {
+    if (!supabaseEnabled) return;
+    let cancelled = false;
+    (async () => {
+      const sb = getBrowserSupabase();
+      const { data: auth } = await sb.auth.getUser();
+      const userId = auth.user?.id ?? null;
+      const links = new Set<string>();
+      if (userId) {
+        const { data } = await sb
+          .from("saved")
+          .select("link")
+          .eq("user_id", userId)
+          .order("saved_at", { ascending: false })
+          .limit(500);
+        for (const row of data ?? []) links.add(row.link as string);
+      }
+      if (!cancelled) setSaved({ userId, links });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const cats = useMemo(
     () => [...new Set(results.map((r) => r.category))],
@@ -32,6 +75,10 @@ export default function SearchResults({
     () => [...new Set(results.map((r) => r.lean))],
     [results],
   );
+  const regions = useMemo(() => {
+    const present = new Set(results.map((r) => regionOf(r.country)));
+    return REGIONS.filter((r) => present.has(r));
+  }, [results]);
   const hasWeb = results.some((r) => r.sourceId === "gnews");
   const hasFeeds = results.some((r) => r.sourceId !== "gnews");
 
@@ -40,6 +87,8 @@ export default function SearchResults({
       (r) =>
         (cat === "all" || r.category === cat) &&
         (lean === "all" || r.lean === lean) &&
+        (region === "all" || regionOf(r.country) === region) &&
+        (!hideOpinion || !isOpinion(r)) &&
         (src === "all" ||
           (src === "web" ? r.sourceId === "gnews" : r.sourceId !== "gnews")),
     );
@@ -50,7 +99,7 @@ export default function SearchResults({
       );
     }
     return list;
-  }, [results, cat, lean, src, sort]);
+  }, [results, cat, lean, region, src, sort, hideOpinion]);
 
   return (
     <>
@@ -95,6 +144,22 @@ export default function SearchResults({
               ))}
             </Facets>
           )}
+          {regions.length > 1 && (
+            <Facets>
+              <Chip active={region === "all"} onClick={() => setRegion("all")}>
+                All regions
+              </Chip>
+              {regions.map((r) => (
+                <Chip
+                  key={r}
+                  active={region === r}
+                  onClick={() => setRegion(r)}
+                >
+                  🌍 {r}
+                </Chip>
+              ))}
+            </Facets>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-2">
             {leans.length > 1 ? (
               <Facets>
@@ -115,19 +180,31 @@ export default function SearchResults({
             ) : (
               <span />
             )}
-            <div className="flex gap-1 rounded-full border border-white/10 bg-white/[0.03] p-0.5 text-xs">
-              <button
-                onClick={() => setSort("relevant")}
-                className={sortCls(sort === "relevant")}
-              >
-                Relevant
-              </button>
-              <button
-                onClick={() => setSort("latest")}
-                className={sortCls(sort === "latest")}
-              >
-                Latest
-              </button>
+            <div className="flex items-center gap-2">
+              {opinionCount > 0 && (
+                <Chip
+                  active={hideOpinion}
+                  onClick={() => setHideOpinion(!hideOpinion)}
+                  pressed={hideOpinion}
+                  title={`${opinionCount} opinion piece${opinionCount === 1 ? "" : "s"} in these results`}
+                >
+                  {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
+                </Chip>
+              )}
+              <div className="flex gap-1 rounded-full border border-white/10 bg-white/[0.03] p-0.5 text-xs">
+                <button
+                  onClick={() => setSort("relevant")}
+                  className={sortCls(sort === "relevant")}
+                >
+                  Relevant
+                </button>
+                <button
+                  onClick={() => setSort("latest")}
+                  className={sortCls(sort === "latest")}
+                >
+                  Latest
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -142,7 +219,20 @@ export default function SearchResults({
       ) : (
         <ul className="mt-4 space-y-3">
           {filtered.map((story) => (
-            <ResultRow key={story.id} story={story} />
+            <ResultRow
+              key={story.id}
+              story={story}
+              saved={saved}
+              onSavedChange={(link, on) =>
+                setSaved((prev) => {
+                  if (!prev) return prev;
+                  const links = new Set(prev.links);
+                  if (on) links.add(link);
+                  else links.delete(link);
+                  return { ...prev, links };
+                })
+              }
+            />
           ))}
         </ul>
       )}
@@ -164,16 +254,22 @@ function Chip({
   active,
   onClick,
   color,
+  pressed,
+  title,
   children,
 }: {
   active: boolean;
   onClick: () => void;
   color?: string;
+  pressed?: boolean;
+  title?: string;
   children: React.ReactNode;
 }) {
   return (
     <button
       onClick={onClick}
+      aria-pressed={pressed}
+      title={title}
       className={`rounded-full border px-2.5 py-1 text-xs transition ${
         active
           ? "border-transparent bg-white/10 text-white"
@@ -190,15 +286,29 @@ function Chip({
   );
 }
 
-function ResultRow({ story }: { story: Story }) {
+function ResultRow({
+  story,
+  saved,
+  onSavedChange,
+}: {
+  story: Story;
+  saved: SavedState;
+  // Keeps the page's saved set current, so a row that is filtered out and
+  // back in shows the right star.
+  onSavedChange: (link: string, saved: boolean) => void;
+}) {
   const lean = LEAN_META[story.lean];
   return (
-    <li>
+    <li className="relative">
       <Link
         href={`/article/${story.id}`}
         className="group block rounded-xl border border-white/10 bg-white/[0.02] p-4 transition hover:border-cyan-400/40 hover:bg-white/[0.05]"
       >
-        <h2 className="font-display font-medium text-slate-100 group-hover:text-white">
+        <h2
+          className={`font-display font-medium text-slate-100 group-hover:text-white ${
+            saved ? "pr-20" : ""
+          }`}
+        >
           {story.title}
         </h2>
         {story.summary && (
@@ -220,11 +330,32 @@ function ResultRow({ story }: { story: Story }) {
               {lean.label}
             </span>
           )}
+          <OpinionTag story={story} />
           {storyPlace(story) && <span>· 📍 {storyPlace(story)}</span>}
           <span>· {timeAgo(story.publishedAt)}</span>
           <span className="aurora-text ml-auto font-medium">Read More →</span>
         </div>
       </Link>
+      {/* Outside the link so the star doesn't open the article. */}
+      {saved && (
+        <div className="absolute right-4 top-4 text-[11px]">
+          <SaveButton
+            compact
+            refresh={false}
+            onChange={(on) => onSavedChange(story.link, on)}
+            userId={saved.userId}
+            initialSaved={saved.links.has(story.link)}
+            story={{
+              storyId: story.id,
+              link: story.link,
+              title: story.title,
+              source: story.source,
+              category: story.category,
+              imageUrl: story.imageUrl,
+            }}
+          />
+        </div>
+      )}
     </li>
   );
 }

@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { OPINION_COOKIE, resolveOpinion } from "@/lib/opinion";
 import SiteHeader from "@/components/SiteHeader";
 import StoryImage from "@/components/StoryImage";
 import RankInfo from "@/components/RankInfo";
+import CopyViewLink from "@/components/CopyViewLink";
 import { getAllStories, type Story } from "@/lib/news";
 import { getWindowPopularity } from "@/lib/engagement";
 import { normalizeUrl } from "@/lib/url";
@@ -10,7 +13,12 @@ import {
   DISPLAY_CATEGORIES,
   type Category,
 } from "@/lib/categories";
-import { LEAN_META } from "@/lib/feeds";
+import { LEAN_META, type Lean } from "@/lib/feeds";
+import { REGIONS, regionOf } from "@/lib/regions";
+import { isOpinion } from "@/lib/compare";
+import OpinionTag from "@/components/OpinionTag";
+import SaveButton from "@/components/SaveButton";
+import { getUser, getServerSupabase } from "@/lib/supabase-server";
 import { formatCount, storyPlace, timeAgo } from "@/lib/format";
 
 export const revalidate = 600;
@@ -18,7 +26,7 @@ export const revalidate = 600;
 export const metadata = {
   title: "Most Popular",
   description:
-    "The full trending leaderboard — world news ranked by what readers actually open, filterable by topic and time.",
+    "The full trending leaderboard — world news ranked by what readers actually open, filterable by topic, region, outlet lean and time.",
 };
 
 // Windows filter by PUBLISH date (labels say so — "most read today" would
@@ -29,18 +37,38 @@ const WINDOWS = [
   { key: "today", label: "Published today", hours: 24 },
 ] as const;
 
+const LEAN_ORDER: Lean[] = [
+  "left",
+  "center-left",
+  "center",
+  "center-right",
+  "right",
+  "intl",
+];
+
 export default async function PopularPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cat?: string; when?: string }>;
+  searchParams: Promise<{ cat?: string; when?: string; region?: string; lean?: string; opinion?: string }>;
 }) {
-  const { cat, when } = await searchParams;
+  const { cat, when, region, lean, opinion } = await searchParams;
+  const { hide: hideOpinion, paramFor: opinionParam } = resolveOpinion(
+    opinion,
+    (await cookies()).get(OPINION_COOKIE)?.value,
+  );
   const activeCat = (DISPLAY_CATEGORIES as string[]).includes(cat ?? "")
     ? (cat as Category)
     : null;
   const win = WINDOWS.find((w) => w.key === when) ?? WINDOWS[0];
+  const activeRegion = REGIONS.find((r) => r === region) ?? null;
+
+  const activeLean = (LEAN_ORDER as string[]).includes(lean ?? "")
+    ? (lean as Lean)
+    : null;
 
   const all = await getAllStories();
+  // Server component, runs once per request; the purity rule targets client re-renders.
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
 
   // Windowed views rank by engagement WITHIN the window when that data
@@ -53,6 +81,9 @@ export default async function PopularPage({
 
   const filtered = all
     .filter((s) => (activeCat ? s.category === activeCat : true))
+    .filter((s) => (activeRegion ? regionOf(s.country) === activeRegion : true))
+    .filter((s) => (activeLean ? s.lean === activeLean : true))
+    .filter((s) => !hideOpinion || !isOpinion(s))
     .filter(
       (s) =>
         win.hours === Infinity ||
@@ -61,12 +92,42 @@ export default async function PopularPage({
     .sort((a, b) => wp(b) - wp(a) || b.score - a.score)
     .slice(0, 40);
 
+  // Reading the opinion cookie already makes this page per-request, so the
+  // reader's saved state can load here: one query for every row shown.
+  // Resilient if the `saved` table is missing (stars just start empty).
+  const user = await getUser();
+  const savedLinks = new Set<string>();
+  if (user && filtered.length > 0) {
+    const { data } = await (await getServerSupabase())
+      .from("saved")
+      .select("link")
+      .eq("user_id", user.id)
+      .in(
+        "link",
+        filtered.map((s) => s.link),
+      );
+    for (const row of data ?? []) savedLinks.add(row.link as string);
+  }
+
   // Build a URL keeping the other filter intact.
-  const qp = (next: { cat?: string | null; when?: string }) => {
+  const qp = (next: {
+    cat?: string | null;
+    when?: string;
+    region?: string | null;
+    lean?: string | null;
+    opinion?: boolean;
+  }) => {
     const c = next.cat !== undefined ? next.cat : activeCat;
     const w = next.when !== undefined ? next.when : win.key;
+    const r = next.region !== undefined ? next.region : activeRegion;
+    const l = next.lean !== undefined ? next.lean : activeLean;
+    const o = next.opinion !== undefined ? next.opinion : hideOpinion;
     const params = new URLSearchParams();
+    const op = opinionParam(o);
+    if (op) params.set("opinion", op);
+    if (l) params.set("lean", l);
     if (c) params.set("cat", c);
+    if (r) params.set("region", r);
     if (w && w !== "all") params.set("when", w);
     const qs = params.toString();
     return `/popular${qs ? `?${qs}` : ""}`;
@@ -117,6 +178,35 @@ export default async function PopularPage({
             ))}
           </div>
           <div className="flex flex-wrap gap-2">
+            <FilterPill href={qp({ region: null })} active={!activeRegion}>
+              All regions
+            </FilterPill>
+            {REGIONS.map((r) => (
+              <FilterPill
+                key={r}
+                href={qp({ region: r })}
+                active={activeRegion === r}
+              >
+                🌍 {r}
+              </FilterPill>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <FilterPill href={qp({ lean: null })} active={!activeLean}>
+              All leans
+            </FilterPill>
+            {LEAN_ORDER.map((l) => (
+              <FilterPill
+                key={l}
+                href={qp({ lean: l })}
+                active={activeLean === l}
+                color={LEAN_META[l].color}
+              >
+                {LEAN_META[l].label}
+              </FilterPill>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
             {WINDOWS.map((w) => (
               <FilterPill
                 key={w.key}
@@ -126,7 +216,26 @@ export default async function PopularPage({
                 {w.label}
               </FilterPill>
             ))}
+            <FilterPill
+              href={qp({ opinion: !hideOpinion })}
+              active={hideOpinion}
+            >
+              {hideOpinion ? "✓ Opinion hidden" : "Hide opinion"}
+            </FilterPill>
           </div>
+          {(activeCat || activeRegion || activeLean || hideOpinion || win.key !== "all") && (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <CopyViewLink path={qp({})} />
+              {(activeCat || activeRegion || activeLean || win.key !== "all") && (
+                <Link
+                  href={qp({ cat: null, region: null, lean: null, when: "all" })}
+                  className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-slate-400 transition hover:border-white/25 hover:text-white"
+                >
+                  ✕ Clear filters
+                </Link>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Leaderboard */}
@@ -137,7 +246,13 @@ export default async function PopularPage({
         ) : (
           <ol className="mt-7 space-y-3">
             {filtered.map((story, i) => (
-              <RankRow key={story.id} story={story} rank={i + 1} />
+              <RankRow
+                key={story.id}
+                story={story}
+                rank={i + 1}
+                userId={user?.id ?? null}
+                saved={savedLinks.has(story.link)}
+              />
             ))}
           </ol>
         )}
@@ -182,14 +297,24 @@ const RANK_BADGE = [
   "from-emerald-400 to-teal-500",
 ];
 
-function RankRow({ story, rank }: { story: Story; rank: number }) {
+function RankRow({
+  story,
+  rank,
+  userId,
+  saved,
+}: {
+  story: Story;
+  rank: number;
+  userId: string | null;
+  saved: boolean;
+}) {
   const cat = CATEGORY_META[story.category];
   const lean = LEAN_META[story.lean];
   return (
-    <li>
+    <li className="relative">
       <Link
         href={`/article/${story.id}`}
-        className="group glass flex items-center gap-4 rounded-2xl p-3 transition hover:-translate-y-0.5 hover:border-white/25"
+        className="group glass flex items-center gap-4 rounded-2xl p-3 pr-20 transition hover:-translate-y-0.5 hover:border-white/25"
       >
         <div className="flex w-8 shrink-0 justify-center">
           {rank <= 3 ? (
@@ -222,6 +347,7 @@ function RankRow({ story, rank }: { story: Story; rank: number }) {
             </span>
             <span className="font-medium text-slate-300">{story.source}</span>
             <span style={{ color: lean.color }}>· {lean.label}</span>
+            <OpinionTag story={story} />
             {storyPlace(story) && <span>· 📍 {storyPlace(story)}</span>}
             <span>· {timeAgo(story.publishedAt)}</span>
           </div>
@@ -236,6 +362,22 @@ function RankRow({ story, rank }: { story: Story; rank: number }) {
           </div>
         ) : null}
       </Link>
+      {/* Outside the link so the star doesn't open the article. */}
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px]">
+        <SaveButton
+          compact
+          userId={userId}
+          initialSaved={saved}
+          story={{
+            storyId: story.id,
+            link: story.link,
+            title: story.title,
+            source: story.source,
+            category: story.category,
+            imageUrl: story.imageUrl,
+          }}
+        />
+      </div>
     </li>
   );
 }

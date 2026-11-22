@@ -1,6 +1,7 @@
 import Link from "next/link";
 import StoryImage from "@/components/StoryImage";
 import RankInfo from "@/components/RankInfo";
+import OpinionTag from "@/components/OpinionTag";
 import { CATEGORY_META } from "@/lib/categories";
 import { LEAN_META } from "@/lib/feeds";
 import { formatCount, storyPlace, timeAgo } from "@/lib/format";
@@ -81,6 +82,7 @@ function Meta({ story }: { story: Story }) {
       >
         {lean.label}
       </span>
+      <OpinionTag story={story} />
       {place && <span>· 📍 {place}</span>}
       <span>· {timeAgo(story.publishedAt)}</span>
       {story.views ? (
