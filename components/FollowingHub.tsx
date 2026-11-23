@@ -7,6 +7,7 @@ import { getBrowserSupabase } from "@/lib/supabase-browser";
 import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
 import { storyPlace, timeAgo } from "@/lib/format";
 import OpinionTag from "@/components/OpinionTag";
+import SaveButton from "@/components/SaveButton";
 import { isOpinion } from "@/lib/compare";
 import { useHideOpinion } from "@/lib/opinion-client";
 
@@ -42,6 +43,9 @@ export type AttributedStory = {
   summary?: string;
   source: string;
   lean: Lean;
+  /** Category slug (stored with saved articles). */
+  category: string;
+  imageUrl?: string;
   categoryLabel: string;
   categoryColor: string;
   categoryEmoji: string;
@@ -66,6 +70,7 @@ export default function FollowingHub({
   topics,
   locations,
   feed,
+  savedLinks,
 }: {
   userId: string;
   initialFollows: Follow[];
@@ -73,6 +78,8 @@ export default function FollowingHub({
   topics: TopicCard[];
   locations: LocationCard[];
   feed: AttributedStory[];
+  /** Links on the wire the reader has already saved. */
+  savedLinks: string[];
 }) {
   const router = useRouter();
   // Coalesce rapid follow sprees into one server re-render instead of firing
@@ -97,6 +104,7 @@ export default function FollowingHub({
       ),
     [feed, hideOpinion],
   );
+  const savedSet = useMemo(() => new Set(savedLinks), [savedLinks]);
   const [keyword, setKeyword] = useState("");
   const [pending, setPending] = useState<Set<string>>(new Set());
   const [sourceSort, setSourceSort] = useState<"all" | "lean" | "region">("all");
@@ -462,7 +470,12 @@ export default function FollowingHub({
         ) : (
           <ul className="mt-4 space-y-3">
             {wire.map((story) => (
-              <WireRow key={story.id} story={story} />
+              <WireRow
+                key={story.id}
+                story={story}
+                userId={userId}
+                saved={savedSet.has(story.link)}
+              />
             ))}
           </ul>
         )}
@@ -827,7 +840,15 @@ function LocationTile({
   );
 }
 
-function WireRow({ story }: { story: AttributedStory }) {
+function WireRow({
+  story,
+  userId,
+  saved,
+}: {
+  story: AttributedStory;
+  userId: string;
+  saved: boolean;
+}) {
   const lean = LEAN_META[story.lean];
   const m = story.match;
   const place = storyPlace({
@@ -836,10 +857,10 @@ function WireRow({ story }: { story: AttributedStory }) {
     country: story.country ?? "",
   });
   return (
-    <li>
+    <li className="relative">
       <Link
         href={`/article/${story.id}`}
-        className="group glass block rounded-2xl p-4 transition hover:-translate-y-0.5 hover:border-white/25"
+        className="group glass block rounded-2xl p-4 pr-20 transition hover:-translate-y-0.5 hover:border-white/25"
       >
         <span
           className="mb-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
@@ -871,6 +892,22 @@ function WireRow({ story }: { story: AttributedStory }) {
           </p>
         )}
       </Link>
+      {/* Outside the link so the star doesn't open the article. */}
+      <div className="absolute right-4 top-4 text-[11px]">
+        <SaveButton
+          compact
+          userId={userId}
+          initialSaved={saved}
+          story={{
+            storyId: story.id,
+            link: story.link,
+            title: story.title,
+            source: story.source,
+            category: story.category,
+            imageUrl: story.imageUrl,
+          }}
+        />
+      </div>
     </li>
   );
 }

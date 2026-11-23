@@ -163,6 +163,8 @@ export default async function FollowingPage() {
         title: s.title,
         link: s.link,
         summary: s.summary,
+        category: s.category,
+        imageUrl: s.imageUrl,
         source: s.source,
         lean: s.lean,
         categoryLabel: cat.label,
@@ -174,6 +176,21 @@ export default async function FollowingPage() {
         match: attribute(s),
       };
     });
+
+  // Per-user page already, so saved state for every wire row loads in one
+  // query. Resilient if the `saved` table is missing (stars start empty).
+  const savedLinks: string[] = [];
+  if (feed.length > 0) {
+    const { data: savedRows } = await sb
+      .from("saved")
+      .select("link")
+      .eq("user_id", user.id)
+      .in(
+        "link",
+        feed.map((s) => s.link),
+      );
+    for (const row of savedRows ?? []) savedLinks.push(row.link as string);
+  }
 
   const newest = feed[0]?.publishedAt;
   // feed may hold up to WIRE_BUFFER rows; FollowingHub shows at most 30.
@@ -212,6 +229,7 @@ export default async function FollowingPage() {
             topics={topics}
             locations={locations}
             feed={feed}
+            savedLinks={savedLinks}
           />
         </div>
       </main>
