@@ -34,8 +34,7 @@ Claude works on GlobeNews in small daily shifts from the cloud. This file is the
 44. Add a `/topic` search suggestion list (autocomplete from current trending words) (proposed).
 59. Rename `middleware.ts` to `proxy.ts` (the build warns the "middleware" convention is deprecated in this Next.js version; check `node_modules/next/dist/docs/` for the proxy API first) (proposed).
 62. Add a lean filter chip row to `/saved` (needs the outlet lean resolved server-side in `app/saved/page.tsx` from the source name/live feed) (proposed).
-68. Add the compact Save star to `/for-you` recommendation rows (page is per-user and dynamic; load saved links in one query like `/popular` does) (proposed).
-69. Add the compact Save star to `/following` Live Wire rows (same pattern; star outside the row link) (proposed).
+70. Add the compact Save star to home and category story cards (`StoryCard`; those pages are cached, so load the reader's saved links once in the browser like `/search` does) (proposed).
 
 ## Added outlets (Aabid approved all 10 and their leans on 2026-10-21; now in `lib/feeds.ts`; URLs still unverified, so the PC feed check matters)
 Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle East, Africa, SE Asia, Latin America and Korea/Turkey. Suggested leans are only a starting point.
@@ -54,6 +53,7 @@ Current roster has 31 outlets, heavy on US/UK and light on South Asia, Middle Ea
 (nothing right now)
 
 ## Shift log (newest first)
+- 2026-11-23 (shift 37): `/for-you` recommendation cards now have the compact "☆ Save" star in the bottom-right corner (saved state loads in one query; star sits outside the card link) (closes #68). `/following` Live Wire rows got the same star top-right; the server loads saved links for the wire once and passes them to `FollowingHub`, and wire rows now carry the category slug and image so saves are complete (closes #69). Proposed #70. Two tasks, lint and build pass.
 - 2026-11-22 (shift 36): `/history` rows now have the compact "☆ Save" star (saved state for the page loads in one query; works for reads that have rotated out of the live feed too, so `SaveStory.storyId` is now nullable) (closes #67). `/popular` leaderboard rows got the same star, vertically centred to the right of the view count; the page was already per-request because it reads the opinion cookie, so saved state loads server-side (closes #65). Proposed #68-#69. Two tasks, lint and build pass.
 - 2026-11-21 (shift 35): `/history` has a "Hide opinion" toggle (list moved into new client `components/HistoryList.tsx` using the shared `useHideOpinion()` cookie; shown only when opinion pieces are present; empty state when only opinion is left) (closes #64). Search result rows now have the compact "☆ Save" star: `/search` stays cached, the reader's saved links (newest 500) load once in the browser, and `SaveButton` got `refresh`/`onChange` props so saving doesn't re-run the web search (closes #66). Proposed #67. Two tasks, lint and build pass.
 - 2026-11-20 (shift 34): Every headline in a `/compare` cluster now has a small "☆ Save" star (new `compact` variant of `SaveButton`; saved state for the whole page loads in one query; signed-out readers get a sign-in link). `/compare` was already dynamic (it reads the opinion cookie), so no ISR problem (closes #26). `/compare` got a "✕ Clear filters" chip (resets lean, region and sort, keeps the opinion setting) and its filtered empty state links to it (closes #63). Proposed #65-#66. Two tasks, lint and build pass.
