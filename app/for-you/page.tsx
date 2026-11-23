@@ -6,6 +6,7 @@ import { isOpinion } from "@/lib/compare";
 import { OPINION_COOKIE, resolveOpinion } from "@/lib/opinion";
 import SiteHeader from "@/components/SiteHeader";
 import StoryImage from "@/components/StoryImage";
+import SaveButton from "@/components/SaveButton";
 import { getUser, getServerSupabase } from "@/lib/supabase-server";
 import { getAllStories, type Story } from "@/lib/news";
 import { CATEGORY_META, type Category } from "@/lib/categories";
@@ -102,6 +103,21 @@ export default async function ForYouPage({
     if (discover) recommendations.push({ story: discover, discover: true });
   }
 
+  // Per-user page already, so the reader's saved state for every card loads
+  // here in one query. Resilient if the `saved` table is missing.
+  const savedLinks = new Set<string>();
+  if (recommendations.length > 0) {
+    const { data: savedRows } = await sb
+      .from("saved")
+      .select("link")
+      .eq("user_id", user.id)
+      .in(
+        "link",
+        recommendations.map((r) => r.story.link),
+      );
+    for (const row of savedRows ?? []) savedLinks.add(row.link as string);
+  }
+
   // Honest metrics: profile strength = how much reading data we have (not a
   // fake "AI confidence"); focus = share of reading in the top category.
   const strength = Math.min(100, Math.round((totalRead / 30) * 100));
@@ -179,12 +195,7 @@ export default async function ForYouPage({
                 const meta = CATEGORY_META[cat as Category];
                 const pct = Math.round((count / totalRead) * 100);
                 return (
-                  <InterestRing
-                    key={cat}
-                    meta={meta}
-                    pct={pct}
-                    count={count}
-                  />
+                  <InterestRing key={cat} meta={meta} pct={pct} count={count} />
                 );
               })}
             </div>
@@ -240,6 +251,8 @@ export default async function ForYouPage({
               }
               readCount={counts.get(story.category) ?? 0}
               discover={discover}
+              userId={user.id}
+              saved={savedLinks.has(story.link)}
             />
           ))}
         </div>
@@ -314,61 +327,86 @@ function RecCard({
   matchPct,
   readCount,
   discover = false,
+  userId,
+  saved,
 }: {
   story: Story;
   matchPct: number;
   readCount: number;
   discover?: boolean;
+  userId: string;
+  saved: boolean;
 }) {
   const cat = CATEGORY_META[story.category];
   return (
-    <Link
-      href={`/article/${story.id}`}
-      className="group glass flex flex-col overflow-hidden rounded-2xl transition hover:border-white/25 hover:bg-white/[0.05]"
-    >
-      <div className="relative h-36 w-full">
-        <StoryImage src={story.imageUrl} className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#07060f]/85 to-transparent" />
-        {discover ? (
-          <span className="aurora-bg absolute left-3 top-3 rounded-full px-2 py-0.5 text-[11px] font-medium text-[#07060f]">
-            ✦ Discover
-          </span>
-        ) : matchPct > 0 ? (
+    <div className="relative">
+      <Link
+        href={`/article/${story.id}`}
+        className="group glass flex h-full flex-col overflow-hidden rounded-2xl transition hover:border-white/25 hover:bg-white/[0.05]"
+      >
+        <div className="relative h-36 w-full">
+          <StoryImage
+            src={story.imageUrl}
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#07060f]/85 to-transparent" />
+          {discover ? (
+            <span className="aurora-bg absolute left-3 top-3 rounded-full px-2 py-0.5 text-[11px] font-medium text-[#07060f]">
+              ✦ Discover
+            </span>
+          ) : matchPct > 0 ? (
+            <span
+              className="absolute left-3 top-3 rounded-full px-2 py-0.5 text-[11px] font-medium text-[#07060f]"
+              style={{ background: "linear-gradient(90deg,#fbbf24,#f59e0b)" }}
+            >
+              ✦ {matchPct}% match
+            </span>
+          ) : null}
           <span
-            className="absolute left-3 top-3 rounded-full px-2 py-0.5 text-[11px] font-medium text-[#07060f]"
-            style={{ background: "linear-gradient(90deg,#fbbf24,#f59e0b)" }}
+            className="absolute right-3 top-3 rounded-full px-2 py-0.5 text-[11px] font-medium"
+            style={{ color: cat.color, background: "rgba(7,6,15,0.6)" }}
           >
-            ✦ {matchPct}% match
+            {cat.emoji} {cat.label}
           </span>
-        ) : null}
-        <span
-          className="absolute right-3 top-3 rounded-full px-2 py-0.5 text-[11px] font-medium"
-          style={{ color: cat.color, background: "rgba(7,6,15,0.6)" }}
-        >
-          {cat.emoji} {cat.label}
-        </span>
-      </div>
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="font-display line-clamp-2 font-medium text-[#ece8e1] group-hover:text-white">
-          {story.title}
-        </h3>
-        <div className="mt-2 rounded-lg border border-white/10 bg-white/[0.03] p-2 text-[11px] text-slate-400">
-          <span className="font-medium text-cyan-300">Why:</span>{" "}
-          {discover
-            ? "broadening your mix — something outside your usual reads"
-            : readCount > 0
-              ? `interest in ${cat.label} (${readCount} read)`
-              : "trending globally"}
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">
-          <span>
-            {story.source} ·{" "}
-            {storyPlace(story) ? `📍 ${storyPlace(story)} · ` : ""}
-            {timeAgo(story.publishedAt)}
-          </span>
-          <OpinionTag story={story} />
+        <div className="flex flex-1 flex-col p-4">
+          <h3 className="font-display line-clamp-2 font-medium text-[#ece8e1] group-hover:text-white">
+            {story.title}
+          </h3>
+          <div className="mt-2 rounded-lg border border-white/10 bg-white/[0.03] p-2 text-[11px] text-slate-400">
+            <span className="font-medium text-cyan-300">Why:</span>{" "}
+            {discover
+              ? "broadening your mix — something outside your usual reads"
+              : readCount > 0
+                ? `interest in ${cat.label} (${readCount} read)`
+                : "trending globally"}
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 pr-16 text-[11px] text-slate-500">
+            <span>
+              {story.source} ·{" "}
+              {storyPlace(story) ? `📍 ${storyPlace(story)} · ` : ""}
+              {timeAgo(story.publishedAt)}
+            </span>
+            <OpinionTag story={story} />
+          </div>
         </div>
+      </Link>
+      {/* Outside the link so the star doesn't open the article. */}
+      <div className="absolute bottom-4 right-4 text-[11px]">
+        <SaveButton
+          compact
+          userId={userId}
+          initialSaved={saved}
+          story={{
+            storyId: story.id,
+            link: story.link,
+            title: story.title,
+            source: story.source,
+            category: story.category,
+            imageUrl: story.imageUrl,
+          }}
+        />
       </div>
-    </Link>
+    </div>
   );
 }
