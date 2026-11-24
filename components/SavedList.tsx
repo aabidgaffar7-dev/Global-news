@@ -9,6 +9,7 @@ import { CATEGORY_META, type Category } from "@/lib/categories";
 import { timeAgo } from "@/lib/format";
 import { isOpinion } from "@/lib/compare";
 import { useHideOpinion } from "@/lib/opinion-client";
+import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
 
 export type SavedItem = {
   link: string;
@@ -17,6 +18,8 @@ export type SavedItem = {
   category: string | null;
   imageUrl: string | null;
   savedAt: string;
+  /** Resolved server-side (live story, else roster name match). */
+  lean: Lean;
   // Resolved server-side against the live feed: in-app route when the story
   // is still live, otherwise the source URL (external).
   href: string;
@@ -35,8 +38,19 @@ export default function SavedList({
   // Same remembered "Hide opinion" choice as the rest of the site.
   const [hideOpinion, setHideOpinion] = useHideOpinion();
   const asStory = (r: SavedItem) => ({ link: r.link, title: r.title ?? "" });
+  const [lean, setLean] = useState<Lean | "all">("all");
   const opinionCount = rows.filter((r) => isOpinion(asStory(r))).length;
-  const visible = hideOpinion ? rows.filter((r) => !isOpinion(asStory(r))) : rows;
+  const afterOpinion = hideOpinion
+    ? rows.filter((r) => !isOpinion(asStory(r)))
+    : rows;
+  // Lean counts follow the opinion choice, so the chips show what's there.
+  const leanCounts = new Map<Lean, number>();
+  for (const r of afterOpinion)
+    leanCounts.set(r.lean, (leanCounts.get(r.lean) ?? 0) + 1);
+  const leans = LEAN_ORDER.filter((l) => leanCounts.has(l) || l === lean);
+  const showLeanRow = new Set(rows.map((r) => r.lean)).size > 1;
+  const visible =
+    lean === "all" ? afterOpinion : afterOpinion.filter((r) => r.lean === lean);
 
   async function remove(link: string) {
     if (pending.has(link)) return;
@@ -88,7 +102,53 @@ export default function SavedList({
           )}
         </div>
       )}
-      {visible.length === 0 ? (
+      {showLeanRow && (
+        <div
+          className={`${opinionCount > 0 || hideOpinion ? "mt-3" : "mt-6"} flex flex-wrap gap-1.5 text-xs`}
+          role="group"
+          aria-label="Filter by outlet lean"
+        >
+          {(["all", ...leans] as const).map((l) => {
+            const active = lean === l;
+            const meta = l === "all" ? null : LEAN_META[l];
+            return (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLean(l)}
+                aria-pressed={active}
+                className={`rounded-full border px-2.5 py-1 transition ${
+                  active
+                    ? "border-transparent bg-white/10 text-white"
+                    : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+                }`}
+                style={
+                  meta && active
+                    ? { color: meta.color, background: `${meta.color}1f` }
+                    : undefined
+                }
+              >
+                {meta
+                  ? `${meta.label} · ${leanCounts.get(l as Lean) ?? 0}`
+                  : `All leans · ${afterOpinion.length}`}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {visible.length === 0 && lean !== "all" ? (
+        <p className="glass mt-6 rounded-2xl p-8 text-center text-slate-400">
+          No saved {LEAN_META[lean].label.toLowerCase()} articles
+          {hideOpinion ? " (opinion hidden)" : ""}.{" "}
+          <button
+            type="button"
+            onClick={() => setLean("all")}
+            className="text-cyan-300 underline-offset-2 hover:underline"
+          >
+            Show all leans
+          </button>
+        </p>
+      ) : visible.length === 0 ? (
         <p className="glass mt-6 rounded-2xl p-8 text-center text-slate-400">
           Everything you&apos;ve saved is opinion.{" "}
           <button
@@ -131,6 +191,15 @@ export default function SavedList({
                         </span>
                       )}
                       <span className="font-medium text-slate-300">{r.source}</span>
+                      <span
+                        className="rounded-full px-1.5 py-0.5"
+                        style={{
+                          color: LEAN_META[r.lean].color,
+                          background: `${LEAN_META[r.lean].color}1a`,
+                        }}
+                      >
+                        {LEAN_META[r.lean].label}
+                      </span>
                       <OpinionTag story={{ link: r.link, title: r.title ?? "" }} />
                       <span>· saved {timeAgo(r.savedAt)}</span>
                       {r.external && <span className="text-slate-500">· source ↗</span>}

@@ -5,6 +5,7 @@ import SavedList, { type SavedItem } from "@/components/SavedList";
 import { getUser, getServerSupabase } from "@/lib/supabase-server";
 import { getAllStories } from "@/lib/news";
 import { normalizeUrl } from "@/lib/url";
+import { FEEDS, type Lean } from "@/lib/feeds";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,12 @@ export default async function SavedPage() {
   // dead-end. Link in-app while the story is live, else out to the source.
   const stories = await getAllStories();
   const live = new Map(stories.map((s) => [normalizeUrl(s.link), s]));
+  // Lean: from the live story when it's still in the feed, else by matching
+  // the saved outlet name against the rated roster. Anything else (web/API
+  // outlets) is honestly "unrated".
+  const leanByName = new Map(
+    FEEDS.map((f) => [f.name.toLowerCase(), f.lean] as const),
+  );
 
   const items: SavedItem[] = rows.map((r) => {
     const s = live.get(normalizeUrl(r.link as string));
@@ -38,6 +45,10 @@ export default async function SavedPage() {
       category: (r.category as string) ?? null,
       imageUrl: (r.image_url as string) ?? (s?.imageUrl ?? null),
       savedAt: r.saved_at as string,
+      lean:
+        s?.lean ??
+        leanByName.get(((r.source as string) ?? "").toLowerCase()) ??
+        ("unrated" as Lean),
       href: s ? `/article/${s.id}` : ((r.link as string) || "/"),
       external: !s,
     };
