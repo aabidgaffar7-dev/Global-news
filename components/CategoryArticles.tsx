@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import StoryImage from "@/components/StoryImage";
 import OpinionTag from "@/components/OpinionTag";
+import CardSaveStar from "@/components/CardSaveStar";
 import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
 import { REGIONS, regionOf } from "@/lib/regions";
 import { storyPlace, timeAgo } from "@/lib/format";
@@ -267,43 +268,47 @@ function ArticleCard({
 }) {
   const lean = LEAN_META[story.lean];
   return (
-    <Link
-      href={`/article/${story.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] transition hover:border-cyan-400/40 hover:bg-white/[0.05]"
-    >
-      <div className="relative h-40 w-full">
-        <StoryImage src={story.imageUrl} className="h-full w-full object-cover" />
-        <span
-          className="absolute right-3 top-3 rounded-full px-2 py-0.5 text-[11px] font-medium"
-          style={{ color: categoryColor, background: "rgba(0,0,0,0.55)" }}
-        >
-          {categoryLabel}
-        </span>
-      </div>
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="font-display line-clamp-2 font-medium text-slate-100 group-hover:text-white">
-          {story.title}
-        </h3>
-        {story.summary && (
-          <p className="mt-2 line-clamp-3 flex-1 text-sm text-slate-400">
-            {story.summary}
-          </p>
-        )}
-        <div className="mt-3 flex items-center gap-2 border-t border-white/5 pt-3 text-[11px] text-slate-500">
-          <span className="font-medium text-slate-400">{story.source}</span>
+    <div className="relative flex">
+      <Link
+        href={`/article/${story.id}`}
+        className="group flex w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] transition hover:border-cyan-400/40 hover:bg-white/[0.05]"
+      >
+        <div className="relative h-40 w-full">
+          <StoryImage src={story.imageUrl} className="h-full w-full object-cover" />
           <span
-            className="rounded-full px-1.5 py-0.5"
-            style={{ color: lean.color, background: `${lean.color}1a` }}
+            className="absolute right-3 top-3 rounded-full px-2 py-0.5 text-[11px] font-medium"
+            style={{ color: categoryColor, background: "rgba(0,0,0,0.55)" }}
           >
-            {lean.label}
-          </span>
-          <OpinionTag story={story} />
-          <span className="ml-auto">
-            {storyPlace(story) ? `📍 ${storyPlace(story)} · ` : ""}
-            {timeAgo(story.publishedAt)}
+            {categoryLabel}
           </span>
         </div>
-      </div>
-    </Link>
+        <div className="flex flex-1 flex-col p-4">
+          <h3 className="font-display line-clamp-2 font-medium text-slate-100 group-hover:text-white">
+            {story.title}
+          </h3>
+          {story.summary && (
+            <p className="mt-2 line-clamp-3 flex-1 text-sm text-slate-400">
+              {story.summary}
+            </p>
+          )}
+          <div className="mt-3 flex items-center gap-2 border-t border-white/5 pt-3 text-[11px] text-slate-500">
+            <span className="font-medium text-slate-400">{story.source}</span>
+            <span
+              className="rounded-full px-1.5 py-0.5"
+              style={{ color: lean.color, background: `${lean.color}1a` }}
+            >
+              {lean.label}
+            </span>
+            <OpinionTag story={story} />
+            <span className="ml-auto">
+              {storyPlace(story) ? `📍 ${storyPlace(story)} · ` : ""}
+              {timeAgo(story.publishedAt)}
+            </span>
+          </div>
+        </div>
+      </Link>
+      {/* Bottom-right of the h-40 image, outside the link. */}
+      <CardSaveStar story={story} className="absolute right-3 top-[126px]" />
+    </div>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import StoryImage from "@/components/StoryImage";
 import RankInfo from "@/components/RankInfo";
 import OpinionTag from "@/components/OpinionTag";
+import CardSaveStar from "@/components/CardSaveStar";
 import { CATEGORY_META } from "@/lib/categories";
 import { LEAN_META } from "@/lib/feeds";
 import { formatCount, storyPlace, timeAgo } from "@/lib/format";
@@ -95,43 +96,53 @@ function Meta({ story }: { story: Story }) {
 function LeadStory({ story, rank }: { story: Story; rank: number }) {
   const cat = CATEGORY_META[story.category];
   return (
-    <Link href={`/article/${story.id}`} className="group block">
-      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
-        <StoryImage
-          src={story.imageUrl}
-          tint={cat.color}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+    <div className="relative">
+      <Link href={`/article/${story.id}`} className="group block">
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
+          <StoryImage
+            src={story.imageUrl}
+            tint={cat.color}
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#07060f] via-[#07060f]/25 to-transparent" />
+          <span
+            className="absolute left-4 top-4 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+            style={{ color: cat.color, background: "rgba(7,6,15,0.7)" }}
+          >
+            {cat.emoji} {cat.label}
+          </span>
+          <span className="aurora-bg absolute right-4 top-4 rounded-full px-2.5 py-1 text-[11px] font-semibold text-[#07060f]">
+            #{rank} most read
+          </span>
+        </div>
+        <h3 className="font-display mt-4 text-balance text-2xl font-medium leading-tight text-[#ece8e1] transition group-hover:text-white sm:text-3xl">
+          {story.title}
+        </h3>
+        {story.summary && (
+          <p className="mt-2 line-clamp-2 text-[15px] leading-relaxed text-slate-400">
+            {story.summary}
+          </p>
+        )}
+        <div className="mt-3">
+          <Meta story={story} />
+        </div>
+      </Link>
+      {/* Same box as the image, so the star sits on its bottom-right corner
+          while staying outside the link. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 aspect-[16/9]">
+        <CardSaveStar
+          story={story}
+          className="pointer-events-auto absolute bottom-4 right-4"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#07060f] via-[#07060f]/25 to-transparent" />
-        <span
-          className="absolute left-4 top-4 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-          style={{ color: cat.color, background: "rgba(7,6,15,0.7)" }}
-        >
-          {cat.emoji} {cat.label}
-        </span>
-        <span className="aurora-bg absolute right-4 top-4 rounded-full px-2.5 py-1 text-[11px] font-semibold text-[#07060f]">
-          #{rank} most read
-        </span>
       </div>
-      <h3 className="font-display mt-4 text-balance text-2xl font-medium leading-tight text-[#ece8e1] transition group-hover:text-white sm:text-3xl">
-        {story.title}
-      </h3>
-      {story.summary && (
-        <p className="mt-2 line-clamp-2 text-[15px] leading-relaxed text-slate-400">
-          {story.summary}
-        </p>
-      )}
-      <div className="mt-3">
-        <Meta story={story} />
-      </div>
-    </Link>
+    </div>
   );
 }
 
 function RankedRow({ story, rank }: { story: Story; rank: number }) {
   const cat = CATEGORY_META[story.category];
   return (
-    <li>
+    <li className="relative">
       <Link
         href={`/article/${story.id}`}
         className="group flex gap-3 py-4 first:pt-0"
@@ -143,7 +154,7 @@ function RankedRow({ story, rank }: { story: Story; rank: number }) {
           <h3 className="font-display line-clamp-2 font-medium leading-snug text-[#ece8e1] transition group-hover:text-white">
             {story.title}
           </h3>
-          <div className="mt-1.5">
+          <div className="mt-1.5 pr-20">
             <Meta story={story} />
           </div>
         </div>
@@ -155,6 +166,11 @@ function RankedRow({ story, rank }: { story: Story; rank: number }) {
           />
         </div>
       </Link>
+      {/* Bottom of the text column, clear of the thumbnail on wider screens. */}
+      <CardSaveStar
+        story={story}
+        className="absolute bottom-3.5 right-0 sm:right-[92px]"
+      />
     </li>
   );
 }
@@ -162,27 +178,35 @@ function RankedRow({ story, rank }: { story: Story; rank: number }) {
 function StripCard({ story, rank }: { story: Story; rank: number }) {
   const cat = CATEGORY_META[story.category];
   return (
-    <Link href={`/article/${story.id}`} className="group block">
-      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl">
-        <StoryImage
-          src={story.imageUrl}
-          tint={cat.color}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+    <div className="relative">
+      <Link href={`/article/${story.id}`} className="group block">
+        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl">
+          <StoryImage
+            src={story.imageUrl}
+            tint={cat.color}
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#07060f]/80 to-transparent" />
+          <span
+            className="absolute left-2.5 top-2.5 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+            style={{ color: cat.color, background: "rgba(7,6,15,0.7)" }}
+          >
+            #{rank}
+          </span>
+        </div>
+        <h3 className="font-display mt-2.5 line-clamp-3 text-sm font-medium leading-snug text-[#ece8e1] transition group-hover:text-white">
+          {story.title}
+        </h3>
+        <div className="mt-1.5">
+          <Meta story={story} />
+        </div>
+      </Link>
+      <div className="pointer-events-none absolute inset-x-0 top-0 aspect-[16/10]">
+        <CardSaveStar
+          story={story}
+          className="pointer-events-auto absolute bottom-2.5 right-2.5"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#07060f]/80 to-transparent" />
-        <span
-          className="absolute left-2.5 top-2.5 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-          style={{ color: cat.color, background: "rgba(7,6,15,0.7)" }}
-        >
-          #{rank}
-        </span>
       </div>
-      <h3 className="font-display mt-2.5 line-clamp-3 text-sm font-medium leading-snug text-[#ece8e1] transition group-hover:text-white">
-        {story.title}
-      </h3>
-      <div className="mt-1.5">
-        <Meta story={story} />
-      </div>
-    </Link>
+    </div>
   );
 }
