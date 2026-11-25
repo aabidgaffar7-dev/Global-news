@@ -23,6 +23,7 @@ import {
 import { REGIONS, regionOf } from "@/lib/regions";
 import { clusterCoverage, isOpinion, trendingTopics } from "@/lib/compare";
 import OpinionTag from "@/components/OpinionTag";
+import CardSaveStar from "@/components/CardSaveStar";
 import { LEAN_META } from "@/lib/feeds";
 import { timeAgo } from "@/lib/format";
 
@@ -203,10 +204,10 @@ export default async function Home({
             </div>
             <ul className="mt-4 grid gap-4 md:grid-cols-3">
               {clusters.map((c) => (
-                <li key={c.id}>
+                <li key={c.id} className="relative">
                   <Link
                     href={`/compare#cluster-${c.id}`}
-                    className="glass block h-full rounded-2xl p-4 transition hover:border-white/25"
+                    className="glass block h-full rounded-2xl p-4 pb-10 transition hover:border-white/25"
                   >
                     <div className="line-clamp-2 text-sm text-slate-200">
                       {c.stories[0].title}
@@ -227,6 +228,12 @@ export default async function Home({
                       ))}
                     </div>
                   </Link>
+                  {/* Saves the lead headline; outside the Link so a tap
+                      doesn't jump to /compare. */}
+                  <CardSaveStar
+                    story={c.stories[0]}
+                    className="absolute bottom-3 right-3"
+                  />
                 </li>
               ))}
             </ul>
