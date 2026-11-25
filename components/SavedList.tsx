@@ -29,11 +29,18 @@ export type SavedItem = {
 export default function SavedList({
   userId,
   items,
+  moreHref = null,
 }: {
   userId: string;
   items: SavedItem[];
+  /** "Load more" link (same page, bigger limit); null when all are shown. */
+  moreHref?: string | null;
 }) {
-  const [rows, setRows] = useState(items);
+  // Removals are tracked as a set (not a copy of `items`) so "Load more",
+  // which re-renders the page with more items, keeps this list in step
+  // without losing the reader's filters.
+  const [removed, setRemoved] = useState<Set<string>>(new Set());
+  const rows = items.filter((r) => !removed.has(r.link));
   const [pending, setPending] = useState<Set<string>>(new Set());
   // Same remembered "Hide opinion" choice as the rest of the site.
   const [hideOpinion, setHideOpinion] = useHideOpinion();
@@ -55,14 +62,19 @@ export default function SavedList({
   async function remove(link: string) {
     if (pending.has(link)) return;
     setPending((p) => new Set(p).add(link));
-    const prev = rows;
-    setRows((r) => r.filter((x) => x.link !== link));
+    setRemoved((s) => new Set(s).add(link));
     const { error } = await getBrowserSupabase()
       .from("saved")
       .delete()
       .eq("user_id", userId)
       .eq("link", link);
-    if (error) setRows(prev); // roll back so the list matches the DB
+    if (error)
+      // Roll back so the list matches the DB.
+      setRemoved((s) => {
+        const next = new Set(s);
+        next.delete(link);
+        return next;
+      });
     setPending((p) => {
       const next = new Set(p);
       next.delete(link);
@@ -219,6 +231,17 @@ export default function SavedList({
             );
           })}
         </ul>
+      )}
+      {moreHref && (
+        <div className="mt-6 text-center">
+          <Link
+            href={moreHref}
+            scroll={false}
+            className="inline-flex rounded-full border border-white/15 px-5 py-2 text-sm text-slate-200 transition hover:border-cyan-400/50 hover:bg-white/[0.06]"
+          >
+            Load more saved articles
+          </Link>
+        </div>
       )}
     </>
   );

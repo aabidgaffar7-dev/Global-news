@@ -11,19 +11,35 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Saved for later" };
 
-export default async function SavedPage() {
+// "Load more" grows the limit in the URL (?n=120, ?n=180, ...) rather than
+// paging by offset, so removing items never makes a page skip rows.
+const PAGE = 60;
+const MAX = 1200;
+
+export default async function SavedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ n?: string }>;
+}) {
   const user = await getUser();
   if (!user) redirect("/login");
 
+  const { n } = await searchParams;
+  const asked = Math.floor(Number(n));
+  const limit = Number.isFinite(asked)
+    ? Math.min(MAX, Math.max(PAGE, Math.ceil(asked / PAGE) * PAGE))
+    : PAGE;
+
   const sb = await getServerSupabase();
-  // Bounded query — paginate with a "load more" once readers save a lot.
+  // Ask for one extra row to learn whether there's more to load.
   const { data } = await sb
     .from("saved")
     .select("story_id,link,title,source,category,image_url,saved_at")
     .eq("user_id", user.id)
     .order("saved_at", { ascending: false })
-    .limit(60);
-  const rows = data ?? [];
+    .limit(limit + 1);
+  const hasMore = (data?.length ?? 0) > limit && limit < MAX;
+  const rows = (data ?? []).slice(0, limit);
 
   // Stories rotate out of the live feed within hours; a saved item must never
   // dead-end. Link in-app while the story is live, else out to the source.
@@ -72,7 +88,11 @@ export default async function SavedPage() {
           Articles you&apos;ve bookmarked to read when you&apos;re ready.
         </p>
 
-        <SavedList userId={user.id} items={items} />
+        <SavedList
+          userId={user.id}
+          items={items}
+          moreHref={hasMore ? `/saved?n=${limit + PAGE}` : null}
+        />
       </main>
     </div>
   );
