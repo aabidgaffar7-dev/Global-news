@@ -30,11 +30,14 @@ export default function SavedList({
   userId,
   items,
   moreHref = null,
+  total,
 }: {
   userId: string;
   items: SavedItem[];
   /** "Load more" link (same page, bigger limit); null when all are shown. */
   moreHref?: string | null;
+  /** Everything the reader has saved (not just the loaded page). */
+  total?: number;
 }) {
   // Removals are tracked as a set (not a copy of `items`) so "Load more",
   // which re-renders the page with more items, keeps this list in step
@@ -58,6 +61,7 @@ export default function SavedList({
   const showLeanRow = new Set(rows.map((r) => r.lean)).size > 1;
   const visible =
     lean === "all" ? afterOpinion : afterOpinion.filter((r) => r.lean === lean);
+  const savedTotal = Math.max(rows.length, (total ?? 0) - removed.size);
 
   async function remove(link: string) {
     if (pending.has(link)) return;
@@ -232,15 +236,20 @@ export default function SavedList({
           })}
         </ul>
       )}
-      {moreHref && (
+      {(moreHref || savedTotal > rows.length) && (
         <div className="mt-6 text-center">
-          <Link
-            href={moreHref}
-            scroll={false}
-            className="inline-flex rounded-full border border-white/15 px-5 py-2 text-sm text-slate-200 transition hover:border-cyan-400/50 hover:bg-white/[0.06]"
-          >
-            Load more saved articles
-          </Link>
+          <p className="mb-2 text-xs text-slate-500">
+            Showing {rows.length} of {savedTotal} saved
+          </p>
+          {moreHref && (
+            <Link
+              href={moreHref}
+              scroll={false}
+              className="inline-flex rounded-full border border-white/15 px-5 py-2 text-sm text-slate-200 transition hover:border-cyan-400/50 hover:bg-white/[0.06]"
+            >
+              Load more saved articles
+            </Link>
+          )}
         </div>
       )}
     </>

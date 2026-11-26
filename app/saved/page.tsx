@@ -32,12 +32,20 @@ export default async function SavedPage({
 
   const sb = await getServerSupabase();
   // Ask for one extra row to learn whether there's more to load.
-  const { data } = await sb
-    .from("saved")
-    .select("story_id,link,title,source,category,image_url,saved_at")
-    .eq("user_id", user.id)
-    .order("saved_at", { ascending: false })
-    .limit(limit + 1);
+  // The total is a head-only count, so readers can see how many are left
+  // ("Showing 60 of 140") without loading them.
+  const [{ data }, { count }] = await Promise.all([
+    sb
+      .from("saved")
+      .select("story_id,link,title,source,category,image_url,saved_at")
+      .eq("user_id", user.id)
+      .order("saved_at", { ascending: false })
+      .limit(limit + 1),
+    sb
+      .from("saved")
+      .select("link", { count: "exact", head: true })
+      .eq("user_id", user.id),
+  ]);
   const hasMore = (data?.length ?? 0) > limit && limit < MAX;
   const rows = (data ?? []).slice(0, limit);
 
@@ -91,6 +99,7 @@ export default async function SavedPage({
         <SavedList
           userId={user.id}
           items={items}
+          total={Math.max(count ?? 0, rows.length)}
           moreHref={hasMore ? `/saved?n=${limit + PAGE}` : null}
         />
       </main>
