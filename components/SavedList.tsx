@@ -11,6 +11,20 @@ import { isOpinion } from "@/lib/compare";
 import { useHideOpinion } from "@/lib/opinion-client";
 import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
 
+// Chip order for the category row; matches the site's category cards with
+// the "world" fallback bucket last.
+const CATEGORY_ORDER: Category[] = [
+  "politics",
+  "business",
+  "technology",
+  "entertainment",
+  "health",
+  "sports",
+  "world",
+];
+const catOf = (r: { category: string | null }): Category | "other" =>
+  r.category && r.category in CATEGORY_META ? (r.category as Category) : "other";
+
 export type SavedItem = {
   link: string;
   title: string | null;
@@ -49,18 +63,29 @@ export default function SavedList({
   const [hideOpinion, setHideOpinion] = useHideOpinion();
   const asStory = (r: SavedItem) => ({ link: r.link, title: r.title ?? "" });
   const [lean, setLean] = useState<Lean | "all">("all");
+  const [category, setCategory] = useState<Category | "other" | "all">("all");
   const opinionCount = rows.filter((r) => isOpinion(asStory(r))).length;
   const afterOpinion = hideOpinion
     ? rows.filter((r) => !isOpinion(asStory(r)))
     : rows;
-  // Lean counts follow the opinion choice, so the chips show what's there.
+  const leanOk = (r: SavedItem) => lean === "all" || r.lean === lean;
+  const catOk = (r: SavedItem) => category === "all" || catOf(r) === category;
+  // Each chip row's counts follow the opinion choice and the other row, so
+  // the numbers always match what tapping the chip would show.
   const leanCounts = new Map<Lean, number>();
-  for (const r of afterOpinion)
+  for (const r of afterOpinion.filter(catOk))
     leanCounts.set(r.lean, (leanCounts.get(r.lean) ?? 0) + 1);
+  const catCounts = new Map<Category | "other", number>();
+  for (const r of afterOpinion.filter(leanOk))
+    catCounts.set(catOf(r), (catCounts.get(catOf(r)) ?? 0) + 1);
   const leans = LEAN_ORDER.filter((l) => leanCounts.has(l) || l === lean);
+  const cats = ([...CATEGORY_ORDER, "other"] as const).filter(
+    (c) => catCounts.has(c) || c === category,
+  );
   const showLeanRow = new Set(rows.map((r) => r.lean)).size > 1;
-  const visible =
-    lean === "all" ? afterOpinion : afterOpinion.filter((r) => r.lean === lean);
+  const showCatRow = new Set(rows.map(catOf)).size > 1;
+  const visible = afterOpinion.filter((r) => leanOk(r) && catOk(r));
+  const filtered = lean !== "all" || category !== "all";
   const savedTotal = Math.max(rows.length, (total ?? 0) - removed.size);
 
   async function remove(link: string) {
@@ -146,22 +171,74 @@ export default function SavedList({
               >
                 {meta
                   ? `${meta.label} · ${leanCounts.get(l as Lean) ?? 0}`
-                  : `All leans · ${afterOpinion.length}`}
+                  : `All leans · ${afterOpinion.filter(catOk).length}`}
               </button>
             );
           })}
         </div>
       )}
-      {visible.length === 0 && lean !== "all" ? (
+      {showCatRow && (
+        <div
+          className={`${showLeanRow || opinionCount > 0 || hideOpinion ? "mt-3" : "mt-6"} flex flex-wrap gap-1.5 text-xs`}
+          role="group"
+          aria-label="Filter by category"
+        >
+          {(["all", ...cats] as const).map((c) => {
+            const active = category === c;
+            const meta = c === "all" || c === "other" ? null : CATEGORY_META[c];
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCategory(c)}
+                aria-pressed={active}
+                className={`rounded-full border px-2.5 py-1 transition ${
+                  active
+                    ? "border-transparent bg-white/10 text-white"
+                    : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+                }`}
+                style={
+                  meta && active
+                    ? { color: meta.color, background: `${meta.color}1f` }
+                    : undefined
+                }
+              >
+                {c === "all"
+                  ? `All categories · ${afterOpinion.filter(leanOk).length}`
+                  : `${meta ? `${meta.emoji} ${meta.label}` : "Other"} · ${catCounts.get(c) ?? 0}`}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {filtered && (
+        <p className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          Showing {visible.length} of {afterOpinion.length} loaded
+          <button
+            type="button"
+            onClick={() => {
+              setLean("all");
+              setCategory("all");
+            }}
+            className="rounded-full border border-white/10 px-2 py-0.5 text-slate-300 transition hover:border-white/25"
+          >
+            ✕ Clear filters
+          </button>
+        </p>
+      )}
+      {visible.length === 0 && filtered ? (
         <p className="glass mt-6 rounded-2xl p-8 text-center text-slate-400">
-          No saved {LEAN_META[lean].label.toLowerCase()} articles
+          No saved articles match these filters
           {hideOpinion ? " (opinion hidden)" : ""}.{" "}
           <button
             type="button"
-            onClick={() => setLean("all")}
+            onClick={() => {
+              setLean("all");
+              setCategory("all");
+            }}
             className="text-cyan-300 underline-offset-2 hover:underline"
           >
-            Show all leans
+            Clear filters
           </button>
         </p>
       ) : visible.length === 0 ? (
