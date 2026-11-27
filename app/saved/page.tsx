@@ -19,12 +19,14 @@ const MAX = 1200;
 export default async function SavedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ n?: string }>;
+  searchParams: Promise<{ n?: string; lean?: string; cat?: string }>;
 }) {
   const user = await getUser();
   if (!user) redirect("/login");
 
-  const { n } = await searchParams;
+  // lean/cat are the list's chip filters; SavedList validates them and keeps
+  // them in the URL so a filtered view survives "Load more" and refreshes.
+  const { n, lean, cat } = await searchParams;
   const asked = Math.floor(Number(n));
   const limit = Number.isFinite(asked)
     ? Math.min(MAX, Math.max(PAGE, Math.ceil(asked / PAGE) * PAGE))
@@ -101,6 +103,8 @@ export default async function SavedPage({
           items={items}
           total={Math.max(count ?? 0, rows.length)}
           moreHref={hasMore ? `/saved?n=${limit + PAGE}` : null}
+          initialLean={lean ?? null}
+          initialCategory={cat ?? null}
         />
       </main>
     </div>

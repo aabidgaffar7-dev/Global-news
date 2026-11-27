@@ -10,6 +10,7 @@ import { timeAgo } from "@/lib/format";
 import { isOpinion } from "@/lib/compare";
 import { useHideOpinion } from "@/lib/opinion-client";
 import { LEAN_META, LEAN_ORDER, type Lean } from "@/lib/feeds";
+import { useUrlParams } from "@/lib/url-state-client";
 
 // Chip order for the category row; matches the site's category cards with
 // the "world" fallback bucket last.
@@ -22,6 +23,8 @@ const CATEGORY_ORDER: Category[] = [
   "sports",
   "world",
 ];
+const CATEGORY_CHIPS = [...CATEGORY_ORDER, "other"] as const;
+type CategoryChip = (typeof CATEGORY_CHIPS)[number];
 const catOf = (r: { category: string | null }): Category | "other" =>
   r.category && r.category in CATEGORY_META ? (r.category as Category) : "other";
 
@@ -45,6 +48,8 @@ export default function SavedList({
   items,
   moreHref = null,
   total,
+  initialLean = null,
+  initialCategory = null,
 }: {
   userId: string;
   items: SavedItem[];
@@ -52,6 +57,9 @@ export default function SavedList({
   moreHref?: string | null;
   /** Everything the reader has saved (not just the loaded page). */
   total?: number;
+  /** `?lean=` / `?cat=` from the page URL (unvalidated). */
+  initialLean?: string | null;
+  initialCategory?: string | null;
 }) {
   // Removals are tracked as a set (not a copy of `items`) so "Load more",
   // which re-renders the page with more items, keeps this list in step
@@ -62,8 +70,38 @@ export default function SavedList({
   // Same remembered "Hide opinion" choice as the rest of the site.
   const [hideOpinion, setHideOpinion] = useHideOpinion();
   const asStory = (r: SavedItem) => ({ link: r.link, title: r.title ?? "" });
-  const [lean, setLean] = useState<Lean | "all">("all");
-  const [category, setCategory] = useState<Category | "other" | "all">("all");
+  // Chip choices start from the URL (the page is per-request, so the server
+  // hands them over and there's no unfiltered flash) and are written back
+  // with replaceState, so refreshes, shared links and "Load more" keep them.
+  const [, setParams] = useUrlParams();
+  const [lean, setLeanState] = useState<Lean | "all">(
+    () => LEAN_ORDER.find((l) => l === initialLean) ?? "all",
+  );
+  const [category, setCategoryState] = useState<CategoryChip | "all">(
+    () => CATEGORY_CHIPS.find((c) => c === initialCategory) ?? "all",
+  );
+  const setLean = (v: Lean | "all") => {
+    setLeanState(v);
+    setParams({ lean: v === "all" ? null : v });
+  };
+  const setCategory = (v: CategoryChip | "all") => {
+    setCategoryState(v);
+    setParams({ cat: v === "all" ? null : v });
+  };
+  const clearFilters = () => {
+    setLeanState("all");
+    setCategoryState("all");
+    setParams({ lean: null, cat: null });
+  };
+  // "Load more" re-renders the page with a bigger limit; carry the chips.
+  const moreLink = (() => {
+    if (!moreHref) return null;
+    const [path, query = ""] = moreHref.split("?");
+    const q = new URLSearchParams(query);
+    if (lean !== "all") q.set("lean", lean);
+    if (category !== "all") q.set("cat", category);
+    return `${path}?${q.toString()}`;
+  })();
   const opinionCount = rows.filter((r) => isOpinion(asStory(r))).length;
   const afterOpinion = hideOpinion
     ? rows.filter((r) => !isOpinion(asStory(r)))
@@ -79,7 +117,7 @@ export default function SavedList({
   for (const r of afterOpinion.filter(leanOk))
     catCounts.set(catOf(r), (catCounts.get(catOf(r)) ?? 0) + 1);
   const leans = LEAN_ORDER.filter((l) => leanCounts.has(l) || l === lean);
-  const cats = ([...CATEGORY_ORDER, "other"] as const).filter(
+  const cats = CATEGORY_CHIPS.filter(
     (c) => catCounts.has(c) || c === category,
   );
   const showLeanRow = new Set(rows.map((r) => r.lean)).size > 1;
@@ -216,10 +254,7 @@ export default function SavedList({
           Showing {visible.length} of {afterOpinion.length} loaded
           <button
             type="button"
-            onClick={() => {
-              setLean("all");
-              setCategory("all");
-            }}
+            onClick={clearFilters}
             className="rounded-full border border-white/10 px-2 py-0.5 text-slate-300 transition hover:border-white/25"
           >
             ✕ Clear filters
@@ -232,10 +267,7 @@ export default function SavedList({
           {hideOpinion ? " (opinion hidden)" : ""}.{" "}
           <button
             type="button"
-            onClick={() => {
-              setLean("all");
-              setCategory("all");
-            }}
+            onClick={clearFilters}
             className="text-cyan-300 underline-offset-2 hover:underline"
           >
             Clear filters
@@ -313,14 +345,14 @@ export default function SavedList({
           })}
         </ul>
       )}
-      {(moreHref || savedTotal > rows.length) && (
+      {(moreLink || savedTotal > rows.length) && (
         <div className="mt-6 text-center">
           <p className="mb-2 text-xs text-slate-500">
             Showing {rows.length} of {savedTotal} saved
           </p>
-          {moreHref && (
+          {moreLink && (
             <Link
-              href={moreHref}
+              href={moreLink}
               scroll={false}
               className="inline-flex rounded-full border border-white/15 px-5 py-2 text-sm text-slate-200 transition hover:border-cyan-400/50 hover:bg-white/[0.06]"
             >
