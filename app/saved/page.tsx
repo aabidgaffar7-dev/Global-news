@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
-import SavedList, { type SavedItem } from "@/components/SavedList";
+import SavedList, {
+  type SavedItem,
+  type SavedSort,
+} from "@/components/SavedList";
 import { getUser, getServerSupabase } from "@/lib/supabase-server";
 import { getAllStories } from "@/lib/news";
 import { normalizeUrl } from "@/lib/url";
@@ -19,14 +22,21 @@ const MAX = 1200;
 export default async function SavedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ n?: string; lean?: string; cat?: string }>;
+  searchParams: Promise<{
+    n?: string;
+    lean?: string;
+    cat?: string;
+    sort?: string;
+  }>;
 }) {
   const user = await getUser();
   if (!user) redirect("/login");
 
   // lean/cat are the list's chip filters; SavedList validates them and keeps
   // them in the URL so a filtered view survives "Load more" and refreshes.
-  const { n, lean, cat } = await searchParams;
+  const { n, lean, cat, sort: sortParam } = await searchParams;
+  const sort: SavedSort =
+    sortParam === "oldest" || sortParam === "live" ? sortParam : "newest";
   const asked = Math.floor(Number(n));
   const limit = Number.isFinite(asked)
     ? Math.min(MAX, Math.max(PAGE, Math.ceil(asked / PAGE) * PAGE))
@@ -41,7 +51,7 @@ export default async function SavedPage({
       .from("saved")
       .select("story_id,link,title,source,category,image_url,saved_at")
       .eq("user_id", user.id)
-      .order("saved_at", { ascending: false })
+      .order("saved_at", { ascending: sort === "oldest" })
       .limit(limit + 1),
     sb
       .from("saved")
@@ -62,7 +72,7 @@ export default async function SavedPage({
     FEEDS.map((f) => [f.name.toLowerCase(), f.lean] as const),
   );
 
-  const items: SavedItem[] = rows.map((r) => {
+  const mapped: SavedItem[] = rows.map((r) => {
     const s = live.get(normalizeUrl(r.link as string));
     return {
       link: r.link as string,
@@ -79,6 +89,15 @@ export default async function SavedPage({
       external: !s,
     };
   });
+  // "Still live first": articles still in the live feed (readable in-app,
+  // with discussion) float up, newest saved first within each group. This
+  // reorders the loaded page; Load more brings in older saves.
+  const items =
+    sort === "live"
+      ? [...mapped.filter((i) => !i.external), ...mapped.filter((i) => i.external)]
+      : mapped;
+  const moreQuery = new URLSearchParams({ n: String(limit + PAGE) });
+  if (sort !== "newest") moreQuery.set("sort", sort);
 
   return (
     <div className="min-h-screen text-slate-200">
@@ -102,7 +121,8 @@ export default async function SavedPage({
           userId={user.id}
           items={items}
           total={Math.max(count ?? 0, rows.length)}
-          moreHref={hasMore ? `/saved?n=${limit + PAGE}` : null}
+          moreHref={hasMore ? `/saved?${moreQuery}` : null}
+          sort={sort}
           initialLean={lean ?? null}
           initialCategory={cat ?? null}
         />

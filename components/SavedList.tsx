@@ -28,6 +28,17 @@ type CategoryChip = (typeof CATEGORY_CHIPS)[number];
 const catOf = (r: { category: string | null }): Category | "other" =>
   r.category && r.category in CATEGORY_META ? (r.category as Category) : "other";
 
+export type SavedSort = "newest" | "oldest" | "live";
+const SORTS: { key: SavedSort; label: string; title: string }[] = [
+  { key: "newest", label: "Newest saved", title: "Most recently saved first" },
+  { key: "oldest", label: "Oldest saved", title: "Your earliest saves first" },
+  {
+    key: "live",
+    label: "Still live first",
+    title: "Articles still in the live feed (open in GlobeNews) first",
+  },
+];
+
 export type SavedItem = {
   link: string;
   title: string | null;
@@ -50,6 +61,7 @@ export default function SavedList({
   total,
   initialLean = null,
   initialCategory = null,
+  sort = "newest",
 }: {
   userId: string;
   items: SavedItem[];
@@ -60,6 +72,8 @@ export default function SavedList({
   /** `?lean=` / `?cat=` from the page URL (unvalidated). */
   initialLean?: string | null;
   initialCategory?: string | null;
+  /** Server-applied order (`?sort=`); chips link to the other orders. */
+  sort?: SavedSort;
 }) {
   // Removals are tracked as a set (not a copy of `items`) so "Load more",
   // which re-renders the page with more items, keeps this list in step
@@ -93,6 +107,17 @@ export default function SavedList({
     setCategoryState("all");
     setParams({ lean: null, cat: null });
   };
+  // Sort chips are links: "oldest" changes which rows the server loads.
+  // They keep the chip filters and start back at the first page.
+  const sortHref = (key: SavedSort) => {
+    const q = new URLSearchParams();
+    if (key !== "newest") q.set("sort", key);
+    if (lean !== "all") q.set("lean", lean);
+    if (category !== "all") q.set("cat", category);
+    const str = q.toString();
+    return `/saved${str ? `?${str}` : ""}`;
+  };
+  const liveCount = rows.filter((r) => !r.external).length;
   // "Load more" re-renders the page with a bigger limit; carry the chips.
   const moreLink = (() => {
     if (!moreHref) return null;
@@ -159,8 +184,38 @@ export default function SavedList({
 
   return (
     <>
+      {rows.length > 1 && (
+        <div
+          className="mt-6 flex flex-wrap items-center gap-1.5 text-xs"
+          role="group"
+          aria-label="Sort saved articles"
+        >
+          <span className="mr-1 text-slate-500">Sort:</span>
+          {SORTS.map((o) => {
+            const active = sort === o.key;
+            return (
+              <Link
+                key={o.key}
+                href={sortHref(o.key)}
+                scroll={false}
+                aria-current={active ? "true" : undefined}
+                title={o.title}
+                className={`rounded-full border px-2.5 py-1 transition ${
+                  active
+                    ? "border-cyan-400/40 bg-cyan-400/10 text-cyan-200"
+                    : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]"
+                }`}
+              >
+                {o.key === "live" ? `${o.label} · ${liveCount}` : o.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
       {(opinionCount > 0 || hideOpinion) && (
-        <div className="mt-6 flex flex-wrap items-center gap-2 text-xs">
+        <div
+          className={`${rows.length > 1 ? "mt-3" : "mt-6"} flex flex-wrap items-center gap-2 text-xs`}
+        >
           <button
             type="button"
             onClick={() => setHideOpinion(!hideOpinion)}
@@ -183,7 +238,7 @@ export default function SavedList({
       )}
       {showLeanRow && (
         <div
-          className={`${opinionCount > 0 || hideOpinion ? "mt-3" : "mt-6"} flex flex-wrap gap-1.5 text-xs`}
+          className="mt-3 flex flex-wrap gap-1.5 text-xs"
           role="group"
           aria-label="Filter by outlet lean"
         >
@@ -217,7 +272,7 @@ export default function SavedList({
       )}
       {showCatRow && (
         <div
-          className={`${showLeanRow || opinionCount > 0 || hideOpinion ? "mt-3" : "mt-6"} flex flex-wrap gap-1.5 text-xs`}
+          className="mt-3 flex flex-wrap gap-1.5 text-xs"
           role="group"
           aria-label="Filter by category"
         >
